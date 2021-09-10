@@ -9,7 +9,7 @@ func main() {
 	th := tblschema.NewTblSchemaHandler()
 	th = th.
 		//设置数据库dsn连接地址
-		SetDsn("root:tiger@(127.0.0.1:3306)/pulingfu?charset=utf8mb4&parseTime=True&loc=Local").
+		SetDsn("root:tiger@(127.0.0.1:3306)/kongyu_local?charset=utf8mb4&parseTime=True&loc=Local").
 		//设置生成的model包名
 		SetPackageName("tbl_my_user").
 		//设置要生成哪张数据库表的结构

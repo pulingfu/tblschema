@@ -232,7 +232,9 @@ func (ts *TblSchemaHandler) getColumns() {
 		qr.Order(ts.fieldOrder).
 			Find(&cols)
 	}
-
+	ts.maxLenFieldName = 0
+	ts.maxLenFieldTag = 0
+	ts.maxLenFieldType = 0
 	var tscolunm []column
 	for _, col := range cols {
 		switch ts.timeType {
