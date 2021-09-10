@@ -3,6 +3,7 @@ package tblschema
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gorm.io/driver/mysql"
@@ -60,6 +61,14 @@ const (
 
 	ORM  = "orm"
 	GORM = "gorm"
+
+	TIMETYPE_STRING = "string"
+	TIMETYPE_TIME   = "time"
+
+	//字典顺序
+	FIELD_ORDER_FIELD_NAME = "COLUMN_NAME"
+	//FIELD_ORDER_ORDINAL_POSITION数据库字段建立顺序
+	FIELD_ORDER_ORDINAL_POSITION = "ORDINAL_POSITION"
 )
 
 type TblSchemaHandler struct {
@@ -73,6 +82,8 @@ type TblSchemaHandler struct {
 	structNameType  string   //结构体名类型 CAMEL_CASE骆驼命名/FIRST_UPPER首字母大写
 	savePath        string   //保存model文件的位置
 	packageName     string   //生成model包名
+	timeType        string   //时间类型对应go类型
+	fieldOrder      string   //排序方式
 
 	columns         []column
 	maxLenFieldType int
@@ -115,12 +126,12 @@ func (ts *TblSchemaHandler) SetOtherTag(otherTag ...string) *TblSchemaHandler {
 	ts.otherTag = otherTag
 	return ts
 }
-func (ts *TblSchemaHandler) SefieldType(fieldNameType string) *TblSchemaHandler {
+func (ts *TblSchemaHandler) SefieldNameType(fieldNameType string) *TblSchemaHandler {
 	ts.fieldNameType = fieldNameType
 	return ts
 }
 
-func (ts *TblSchemaHandler) SetTableNameType(structNameType string) *TblSchemaHandler {
+func (ts *TblSchemaHandler) SetStructNameType(structNameType string) *TblSchemaHandler {
 	ts.structNameType = structNameType
 	return ts
 }
@@ -128,15 +139,30 @@ func (ts *TblSchemaHandler) SetPackageName(packageName string) *TblSchemaHandler
 	ts.packageName = packageName
 	return ts
 }
+func (ts *TblSchemaHandler) SetFieldOrder(fieldOrder string) *TblSchemaHandler {
+	ts.fieldOrder = fieldOrder
+	return ts
+}
 
-func (ts *TblSchemaHandler) Run() {
+func (ts *TblSchemaHandler) SetTimeType(timeType string) *TblSchemaHandler {
+	ts.timeType = timeType
+	return ts
+}
+
+func (ts *TblSchemaHandler) Run() *TblSchemaHandler {
 	ts.connectSql()
 	ts.getColumns()
 	packageName := "package model"
 	if ts.packageName != "" {
 		packageName = fmt.Sprintf("package %s\n", ts.packageName)
 	}
-	structName := ts.camelCase(ts.tableName, ts.structNameType)
+
+	packageimport := "import \"time\"\n"
+	if ts.timeType == TIMETYPE_STRING {
+		packageimport = ""
+	}
+
+	structName := ts.generateChangeChara(ts.tableName, ts.structNameType)
 	structContent := fmt.Sprintf("type %s struct{\n", structName)
 
 	for _, v := range ts.columns {
@@ -149,19 +175,23 @@ func (ts *TblSchemaHandler) Run() {
 		fmt.Sprintf("\t return \"%s\"\n", ts.tableName) +
 		"}\n"
 
-	fileContent := fmt.Sprintf("%s\n%s\n%s", packageName, structContent, functableName)
+	fileContent := fmt.Sprintf("%s\n%s\n%s\n%s", packageName, packageimport, structContent, functableName)
 
 	fmt.Println(fileContent)
 	filePath := fmt.Sprint(ts.savePath)
+
+	paths, _ := filepath.Split(ts.savePath)
+	fmt.Println(paths)
+	os.MkdirAll(paths, os.ModePerm)
 	f, err := os.Create(filePath)
 	if err != nil {
 		fmt.Println("打开文件失败")
-		return
+		return ts
 	}
 	defer f.Close()
 
 	f.WriteString(fileContent)
-
+	return ts
 }
 
 type column struct {
@@ -184,14 +214,34 @@ type Field struct {
 func (ts *TblSchemaHandler) getColumns() {
 	db := ts.db
 	var cols []column
-	db.Table("information_schema.COLUMNS").
+	qr := db.Table("information_schema.COLUMNS").
 		Select("COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT").
 		Where("table_schema = DATABASE()").
-		Where("TABLE_NAME", ts.tableName).
-		Order("COLUMN_NAME").
-		Find(&cols)
+		Where("TABLE_NAME", ts.tableName)
+	switch ts.fieldOrder {
+	case FIELD_ORDER_FIELD_NAME:
+		qr.Order("COLUMN_NAME").
+			Find(&cols)
+	case FIELD_ORDER_ORDINAL_POSITION:
+		qr.Order("ORDINAL_POSITION").
+			Find(&cols)
+	case "":
+		qr.Order("COLUMN_NAME").
+			Find(&cols)
+	default:
+		qr.Order(ts.fieldOrder).
+			Find(&cols)
+	}
+
 	var tscolunm []column
 	for _, col := range cols {
+		switch ts.timeType {
+		case TIMETYPE_STRING:
+			switch col.Type {
+			case "date", "datetime", "timestamp", "time":
+				col.Type = fmt.Sprintf("%s_string", col.Type)
+			}
+		}
 		var tag string
 		switch ts.modelOrmTagType {
 		case ORM:
@@ -202,10 +252,12 @@ func (ts *TblSchemaHandler) getColumns() {
 			tag = fmt.Sprintf("`gorm:\"column:%s\" ", col.ColumnName)
 		}
 		for _, v := range ts.otherTag {
-			tag += fmt.Sprintf("%s:\"%s\" ", v, col.ColumnName)
+			if v != "" {
+				tag += fmt.Sprintf("%s:\"%s\" ", v, col.ColumnName)
+			}
 		}
 		tag += "`"
-		fieldName := ts.camelCase(col.ColumnName, ts.fieldNameType)
+		fieldName := ts.generateChangeChara(col.ColumnName, ts.fieldNameType)
 
 		if len(fieldName) > ts.maxLenFieldName {
 			ts.maxLenFieldName = len(fieldName)
@@ -239,7 +291,7 @@ func (ts *TblSchemaHandler) getColumns() {
 
 }
 
-func (ts *TblSchemaHandler) camelCase(str string, Type string) string {
+func (ts *TblSchemaHandler) generateChangeChara(str string, Type string) string {
 
 	var text string
 	//不开启字段转为骆驼写法则仅仅将首字母大写
