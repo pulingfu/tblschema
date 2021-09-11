@@ -25,6 +25,9 @@ var sqlTypeToGoType = map[string]string{
 	"mediumint unsigned": "int",
 	"bigint unsigned":    "int",
 	"bit":                "int",
+	"float":              "float64",
+	"double":             "float64",
+	"decimal":            "float64",
 	"bool":               "bool",
 	"enum":               "string",
 	"set":                "string",
@@ -38,9 +41,6 @@ var sqlTypeToGoType = map[string]string{
 	"tinyblob":           "string",
 	"mediumblob":         "string",
 	"longblob":           "string",
-	"float":              "float64",
-	"double":             "float64",
-	"decimal":            "float64",
 	"binary":             "string",
 	"varbinary":          "string",
 
@@ -56,8 +56,8 @@ var sqlTypeToGoType = map[string]string{
 }
 
 const (
-	CAMEL_CASE  = "camel_case"
-	FIRST_UPPER = "first_upper"
+	CAMEL_CASE  = "CamelCase"
+	FIRST_UPPER = "First_upper"
 
 	ORM  = "orm"
 	GORM = "gorm"
@@ -71,102 +71,164 @@ const (
 	FIELD_ORDER_ORDINAL_POSITION = "ORDINAL_POSITION"
 )
 
-type TblSchemaHandler struct {
+type TblToStructHandler struct {
 	dsn string   //数据库连接dsn,列：用户:密码@(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local
 	db  *gorm.DB //数据库连接
 
-	tableName       string   //要生成model的数据库表名
-	modelOrmTagType string   //生成orm结构题标签类型
-	otherTag        []string //其他标签
-	fieldNameType   string   //字段名类型 CAMEL_CASE骆驼命名/FIRST_UPPER首字母大写
-	structNameType  string   //结构体名类型 CAMEL_CASE骆驼命名/FIRST_UPPER首字母大写
-	savePath        string   //保存model文件的位置
-	packageName     string   //生成model包名
-	timeType        string   //时间类型对应go类型
-	fieldOrder      string   //排序方式
+	tableName string //要生成model的数据库表名
+	savePath  string //保存model文件的位置
+	timeType  string //时间类型对应go类型
 
-	columns         []column
-	maxLenFieldType int
-	maxLenFieldTag  int
-	maxLenFieldName int
+	packageInfo         packageInfo         //模型文件包名配置
+	tblStructNameInfo   tblStructNameInfo   //结构体模型名配置
+	tblStructColumnInfo tblStructColumnInfo //结构体内容配置
 }
 
-func NewTblSchemaHandler() *TblSchemaHandler {
-	return &TblSchemaHandler{
-		packageName:     "model",
-		savePath:        "model.go",
-		modelOrmTagType: "gorm",
-		fieldNameType:   CAMEL_CASE,
-		structNameType:  CAMEL_CASE,
+type packageInfo struct {
+	PackageName   string //包名
+	PackagePrefix string //包名前缀
+	PackageSuffix string //包名后缀
+}
+type tblStructNameInfo struct {
+	TblStructName     string
+	TblStructPrefix   string //包名前缀
+	TblStructSuffix   string //包名后缀
+	TblStructNameType string //结构体名类型 CAMEL_CASE骆驼命名/FIRST_UPPER首字母大写
+}
+
+type tblStructColumnInfo struct {
+	ColumnOrder      string //排序方式
+	ColumnNameType   string //字段名类型 CAMEL_CASE骆驼命名/FIRST_UPPER首字母大写
+	ColumnNameSuffix string //生成模型行后缀
+	ColumnNamePrefix string //生成模型行前缀
+
+	ModelOrmTagType string   //生成orm结构题标签类型
+	OtherTag        []string //其他标签
+
+	//数据库对应行信息
+	Columns         []column
+	MaxLenFieldType int
+	MaxLenFieldTag  int
+	MaxLenFieldName int
+}
+
+func NewTblToStructHandler() *TblToStructHandler {
+	return &TblToStructHandler{
+		packageInfo: packageInfo{
+			PackageName:   "model",
+			PackageSuffix: "",
+			PackagePrefix: "",
+		},
+		tblStructNameInfo: tblStructNameInfo{
+			TblStructPrefix:   "",
+			TblStructSuffix:   "",
+			TblStructNameType: CAMEL_CASE,
+		},
+		tblStructColumnInfo: tblStructColumnInfo{
+			ModelOrmTagType:  "gorm",
+			ColumnNameType:   CAMEL_CASE,
+			ColumnOrder:      FIELD_ORDER_ORDINAL_POSITION,
+			ColumnNamePrefix: "",
+			ColumnNameSuffix: "",
+		},
+
+		savePath: "model.go",
 	}
 }
 
-func (ts *TblSchemaHandler) SetDsn(dsn string) *TblSchemaHandler {
+func (ts *TblToStructHandler) SetDsn(dsn string) *TblToStructHandler {
 	ts.dsn = dsn
 	return ts
 }
-func (ts *TblSchemaHandler) SetDB(db *gorm.DB) *TblSchemaHandler {
+func (ts *TblToStructHandler) SetDB(db *gorm.DB) *TblToStructHandler {
 	ts.db = db
 	return ts
 }
-func (ts *TblSchemaHandler) SetSavePath(savePath string) *TblSchemaHandler {
+func (ts *TblToStructHandler) SetSavePath(savePath string) *TblToStructHandler {
 	ts.savePath = savePath
 	return ts
 }
-func (ts *TblSchemaHandler) SetTableName(tableName string) *TblSchemaHandler {
+func (ts *TblToStructHandler) SetTableName(tableName string) *TblToStructHandler {
 	ts.tableName = tableName
 	return ts
 }
 
-func (ts *TblSchemaHandler) SetModelOrmTagType(modelOrmTagType string) *TblSchemaHandler {
-	ts.modelOrmTagType = modelOrmTagType
-	return ts
-}
-func (ts *TblSchemaHandler) SetOtherTag(otherTag ...string) *TblSchemaHandler {
-	ts.otherTag = otherTag
-	return ts
-}
-func (ts *TblSchemaHandler) SefieldNameType(fieldNameType string) *TblSchemaHandler {
-	ts.fieldNameType = fieldNameType
+//设置所生成对应的orm 标记类型  默认为 `gorm:"column:xxx"`
+func (ts *TblToStructHandler) SetStructOrmTag(modelOrmTagType string) *TblToStructHandler {
+	ts.tblStructColumnInfo.ModelOrmTagType = modelOrmTagType
 	return ts
 }
 
-func (ts *TblSchemaHandler) SetStructNameType(structNameType string) *TblSchemaHandler {
-	ts.structNameType = structNameType
-	return ts
-}
-func (ts *TblSchemaHandler) SetPackageName(packageName string) *TblSchemaHandler {
-	ts.packageName = packageName
-	return ts
-}
-func (ts *TblSchemaHandler) SetFieldOrder(fieldOrder string) *TblSchemaHandler {
-	ts.fieldOrder = fieldOrder
+//添加其他的标签 如json ==> `json:"xxx"`
+func (ts *TblToStructHandler) SetOtherTags(otherTag ...string) *TblToStructHandler {
+	ts.tblStructColumnInfo.OtherTag = otherTag
 	return ts
 }
 
-func (ts *TblSchemaHandler) SetTimeType(timeType string) *TblSchemaHandler {
+//设置行信息
+func (ts *TblToStructHandler) SeTblStructColumnNameInfo(columnNameType, columnOrder, prefix, suffix string) *TblToStructHandler {
+	ts.tblStructColumnInfo.ColumnNameType = columnNameType
+	ts.tblStructColumnInfo.ColumnNameSuffix = suffix
+	ts.tblStructColumnInfo.ColumnNamePrefix = prefix
+	ts.tblStructColumnInfo.ColumnOrder = columnOrder
+	return ts
+}
+
+//默认生成的结构体名类型为CamelCase写法，无前后后缀
+func (ts *TblToStructHandler) SetTblStructNameInfo(structNameType, prifix, suffix string) *TblToStructHandler {
+	ts.tblStructNameInfo.TblStructNameType = structNameType
+	ts.tblStructNameInfo.TblStructPrefix = prifix
+	ts.tblStructNameInfo.TblStructSuffix = suffix
+	return ts
+}
+
+//设置包信息
+func (ts *TblToStructHandler) SetPackageInfo(packageName, prifix, suffix string) *TblToStructHandler {
+	ts.packageInfo.PackageName = packageName
+	ts.packageInfo.PackagePrefix = prifix
+	ts.packageInfo.PackageSuffix = suffix
+	return ts
+}
+
+//设置数据库中的时间类型对应 modelstruct中的什么 time.Time/string
+func (ts *TblToStructHandler) SetTimeType(timeType string) *TblToStructHandler {
 	ts.timeType = timeType
 	return ts
 }
 
-func (ts *TblSchemaHandler) Run() *TblSchemaHandler {
+func (ts *TblToStructHandler) GenerateTblStruct() *TblToStructHandler {
 	ts.connectSql()
 	ts.getColumns()
-	packageName := "package model"
-	if ts.packageName != "" {
-		packageName = fmt.Sprintf("package %s\n", ts.packageName)
-	}
-
+	packageName := fmt.Sprintf("package %s%s%s\n",
+		ts.packageInfo.PackagePrefix,
+		ts.packageInfo.PackageName,
+		ts.packageInfo.PackageSuffix,
+	)
 	packageimport := "import \"time\"\n"
 	if ts.timeType == TIMETYPE_STRING {
 		packageimport = ""
 	}
 
-	structName := ts.generateChangeChara(ts.tableName, ts.structNameType)
+	var tableComment string
+	// select * from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA=database()
+	ts.db.Table("INFORMATION_SCHEMA.TABLES").
+		Select("TABLE_COMMENT").
+		Where("TABLE_SCHEMA=database()").
+		Where("TABLE_NAME", ts.tableName).Find(&tableComment)
+	tableComment = fmt.Sprintf("//%s\n", tableComment)
+	ts.tblStructNameInfo.TblStructName = fmt.Sprintf("%s%s%s",
+		ts.tblStructNameInfo.TblStructPrefix,
+		ts.tableName,
+		ts.tblStructNameInfo.TblStructSuffix,
+	)
+	structName := ts.generateChangeChara(ts.tblStructNameInfo.TblStructName, ts.tblStructNameInfo.TblStructNameType)
 	structContent := fmt.Sprintf("type %s struct{\n", structName)
 
-	for _, v := range ts.columns {
-		match := fmt.Sprint("\t%-", ts.maxLenFieldName, "s %-", ts.maxLenFieldType, "s %-", ts.maxLenFieldTag, "s %s\n")
+	for _, v := range ts.tblStructColumnInfo.Columns {
+		match := fmt.Sprint("\t%-",
+			ts.tblStructColumnInfo.MaxLenFieldName, "s %-",
+			ts.tblStructColumnInfo.MaxLenFieldType, "s %-",
+			ts.tblStructColumnInfo.MaxLenFieldTag, "s %s\n")
 		structContent += fmt.Sprintf(match, v.FieldContent.Name, v.FieldContent.Type, v.FieldContent.Tag, v.FieldContent.Comment)
 	}
 	structContent += "}\n"
@@ -175,7 +237,7 @@ func (ts *TblSchemaHandler) Run() *TblSchemaHandler {
 		fmt.Sprintf("\t return \"%s\"\n", ts.tableName) +
 		"}\n"
 
-	fileContent := fmt.Sprintf("%s\n%s\n%s\n%s", packageName, packageimport, structContent, functableName)
+	fileContent := fmt.Sprintf("%s\n%s\n%s%s\n%s", packageName, packageimport, tableComment, structContent, functableName)
 
 	fmt.Println(fileContent)
 	filePath := fmt.Sprint(ts.savePath)
@@ -211,14 +273,17 @@ type Field struct {
 	Comment string
 }
 
-func (ts *TblSchemaHandler) getColumns() {
+func (ts *TblToStructHandler) getColumns() {
+	if ts.tableName == "" {
+		panic("请先调用SetTableName设置要生成结构的数据库表哦")
+	}
 	db := ts.db
 	var cols []column
 	qr := db.Table("information_schema.COLUMNS").
 		Select("COLUMN_NAME,DATA_TYPE,IS_NULLABLE,TABLE_NAME,COLUMN_COMMENT").
 		Where("table_schema = DATABASE()").
 		Where("TABLE_NAME", ts.tableName)
-	switch ts.fieldOrder {
+	switch ts.tblStructColumnInfo.ColumnOrder {
 	case FIELD_ORDER_FIELD_NAME:
 		qr.Order("COLUMN_NAME").
 			Find(&cols)
@@ -229,12 +294,15 @@ func (ts *TblSchemaHandler) getColumns() {
 		qr.Order("COLUMN_NAME").
 			Find(&cols)
 	default:
-		qr.Order(ts.fieldOrder).
+		qr.Order(ts.tblStructColumnInfo.ColumnOrder).
 			Find(&cols)
 	}
-	ts.maxLenFieldName = 0
-	ts.maxLenFieldTag = 0
-	ts.maxLenFieldType = 0
+	if len(cols) < 1 {
+		panic("此表不存在或者数据库连接 不正确请检查哦")
+	}
+	ts.tblStructColumnInfo.MaxLenFieldName = 0
+	ts.tblStructColumnInfo.MaxLenFieldTag = 0
+	ts.tblStructColumnInfo.MaxLenFieldType = 0
 	var tscolunm []column
 	for _, col := range cols {
 		switch ts.timeType {
@@ -245,7 +313,7 @@ func (ts *TblSchemaHandler) getColumns() {
 			}
 		}
 		var tag string
-		switch ts.modelOrmTagType {
+		switch ts.tblStructColumnInfo.ModelOrmTagType {
 		case ORM:
 			tag = fmt.Sprintf("`orm:\"%s\" ", col.ColumnName)
 		case GORM:
@@ -253,22 +321,27 @@ func (ts *TblSchemaHandler) getColumns() {
 		default:
 			tag = fmt.Sprintf("`gorm:\"column:%s\" ", col.ColumnName)
 		}
-		for _, v := range ts.otherTag {
+		for _, v := range ts.tblStructColumnInfo.OtherTag {
 			if v != "" {
 				tag += fmt.Sprintf("%s:\"%s\" ", v, col.ColumnName)
 			}
 		}
 		tag += "`"
-		fieldName := ts.generateChangeChara(col.ColumnName, ts.fieldNameType)
+		fieldName := fmt.Sprintf("%s%s%s",
+			ts.tblStructColumnInfo.ColumnNamePrefix,
+			col.ColumnName,
+			ts.tblStructColumnInfo.ColumnNameSuffix,
+		)
+		fieldName = ts.generateChangeChara(fieldName, ts.tblStructColumnInfo.ColumnNameType)
 
-		if len(fieldName) > ts.maxLenFieldName {
-			ts.maxLenFieldName = len(fieldName)
+		if len(fieldName) > ts.tblStructColumnInfo.MaxLenFieldName {
+			ts.tblStructColumnInfo.MaxLenFieldName = len(fieldName)
 		}
-		if len(sqlTypeToGoType[col.Type]) > ts.maxLenFieldType {
-			ts.maxLenFieldType = len(sqlTypeToGoType[col.Type])
+		if len(sqlTypeToGoType[col.Type]) > ts.tblStructColumnInfo.MaxLenFieldType {
+			ts.tblStructColumnInfo.MaxLenFieldType = len(sqlTypeToGoType[col.Type])
 		}
-		if len(tag) > ts.maxLenFieldTag {
-			ts.maxLenFieldTag = len(tag)
+		if len(tag) > ts.tblStructColumnInfo.MaxLenFieldTag {
+			ts.tblStructColumnInfo.MaxLenFieldTag = len(tag)
 		}
 
 		col.FieldContent = Field{
@@ -289,11 +362,11 @@ func (ts *TblSchemaHandler) getColumns() {
 		// ts.columns = append(ts.columns, col)
 	}
 
-	ts.columns = tscolunm
+	ts.tblStructColumnInfo.Columns = tscolunm
 
 }
 
-func (ts *TblSchemaHandler) generateChangeChara(str string, Type string) string {
+func (ts *TblToStructHandler) generateChangeChara(str string, Type string) string {
 
 	var text string
 	//不开启字段转为骆驼写法则仅仅将首字母大写
@@ -313,7 +386,7 @@ func (ts *TblSchemaHandler) generateChangeChara(str string, Type string) string 
 	return text
 }
 
-func (ts *TblSchemaHandler) connectSql() {
+func (ts *TblToStructHandler) connectSql() {
 	if ts.db == nil {
 		if ts.dsn == "" {
 			panic("数据库连接不能为空")
@@ -326,4 +399,26 @@ func (ts *TblSchemaHandler) connectSql() {
 		ts.db = db
 	}
 
+}
+
+func (ts *TblToStructHandler) GetAllTableNames() []string {
+	ts.connectSql()
+	var allTname []string
+	ts.db.Table("INFORMATION_SCHEMA.TABLES").
+		Select("TABLE_NAME").
+		Where("TABLE_SCHEMA=database()").
+		Find(&allTname)
+	return allTname
+}
+
+func (ts *TblToStructHandler) GenerateAllTblStruct() {
+	ts.connectSql()
+	allTname := ts.GetAllTableNames()
+	for _, tname := range allTname {
+		ts.
+			SetPackageInfo(tname, "tbl_", "").
+			SetSavePath(fmt.Sprintf("./tbl_%s/schema_model.go", tname)).
+			SetTableName(tname).
+			GenerateTblStruct()
+	}
 }
