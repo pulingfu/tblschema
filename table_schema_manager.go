@@ -239,20 +239,22 @@ func (ts *TblToStructHandler) GenerateTblStruct() *TblToStructHandler {
 
 	fileContent := fmt.Sprintf("%s\n%s\n%s%s\n%s", packageName, packageimport, tableComment, structContent, functableName)
 
-	fmt.Println(fileContent)
+	// fmt.Println(fileContent)
 	filePath := fmt.Sprint(ts.savePath)
 
 	paths, _ := filepath.Split(ts.savePath)
-	fmt.Println(paths)
+	// fmt.Println(paths)
 	os.MkdirAll(paths, os.ModePerm)
 	f, err := os.Create(filePath)
 	if err != nil {
-		fmt.Println("打开文件失败")
+		fmt.Printf("\x1b[%dm table: %s 生成失败\x1b[0m\n", 31, ts.tableName)
 		return ts
 	}
 	defer f.Close()
 
 	f.WriteString(fileContent)
+	fmt.Printf("\x1b[%dm table: %s 生成成功\x1b[0m\n", 32, ts.tableName)
+	// fmt.Printf("", )
 	return ts
 }
 
