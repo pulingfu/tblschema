@@ -247,13 +247,13 @@ func (ts *TblToStructHandler) GenerateTblStruct() *TblToStructHandler {
 	os.MkdirAll(paths, os.ModePerm)
 	f, err := os.Create(filePath)
 	if err != nil {
-		fmt.Printf("\x1b[%dm table: %s 生成失败\x1b[0m\n", 31, ts.tableName)
+		fmt.Printf("\x1b[%dm->table: %s 生成失败\x1b[0m\n", 31, ts.tableName)
 		return ts
 	}
 	defer f.Close()
 
 	f.WriteString(fileContent)
-	fmt.Printf("\x1b[%dm table: %s 生成成功\x1b[0m\n", 32, ts.tableName)
+	fmt.Printf("\x1b[%dm->table: %s 生成成功\x1b[0m\n", 32, ts.tableName)
 	// fmt.Printf("", )
 	return ts
 }
