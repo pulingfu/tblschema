@@ -204,9 +204,19 @@ func (ts *TblToStructHandler) GenerateTblStruct() *TblToStructHandler {
 		ts.packageInfo.PackageName,
 		ts.packageInfo.PackageSuffix,
 	)
-	packageimport := "import \"time\"\n"
-	if ts.timeType == TIMETYPE_STRING {
-		packageimport = ""
+	var timetypeCount int64
+	ts.db.Table("INFORMATION_SCHEMA.COLUMNS").
+		Where("TABLE_SCHEMA=database()").
+		Where("TABLE_NAME", ts.tableName).
+		Where("DATA_TYPE in ?", []string{
+			"date", "datetime", "timestamp", "time",
+			"DATE", "DATETIME", "TIMESTAMP", "TIME",
+		}).
+		Count(&timetypeCount)
+
+	packageimport := ""
+	if ts.timeType != TIMETYPE_STRING && timetypeCount > 0 {
+		packageimport = "import \"time\"\n"
 	}
 
 	var tableComment string
