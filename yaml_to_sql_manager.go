@@ -422,7 +422,7 @@ func (ts *YamlToSqlHandler) doSqlSafe() *YamlToSqlHandler {
 					}
 					fmt.Printf("\x1b[%dm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>： \x1b[0m\n", 34)
 					fmt.Printf("\x1b[%dm正在执行sql:\n%s \x1b[0m\n", 34,
-						strings.ReplaceAll(subsql, "\n", ";")+";")
+						subsql+";")
 					fmt.Printf("\x1b[%dm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>： \x1b[0m\n", 34)
 					subsql += ";"
 					err := tx.Exec(subsql).Error
@@ -487,7 +487,7 @@ func (ts *YamlToSqlHandler) doSql() *YamlToSqlHandler {
 				}
 				fmt.Printf("\x1b[%dm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>： \x1b[0m\n", 34)
 				fmt.Printf("\x1b[%dm正在执行sql:\n%s \x1b[0m\n", 34,
-					strings.ReplaceAll(subsql, "\n", ";")+";")
+					subsql+";")
 				fmt.Printf("\x1b[%dm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>： \x1b[0m\n", 34)
 				subsql += ";"
 				err := tx.Exec(subsql).Error

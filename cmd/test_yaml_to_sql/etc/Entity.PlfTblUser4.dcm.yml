@@ -1,6 +1,6 @@
 Table:
     type: entity
-    table: plf_tbl_user_3
+    table: plf_tbl_user_4
     options:
         charset: utf8mb4
         collate: utf8mb4_general_ci
@@ -98,6 +98,6 @@ Table:
 
         updated_at:
             type: datetime
-            nullable: false
+            nullable: true
             generator: on update current_timestamp
             comment: 上一次更新时间，默认自动更新
