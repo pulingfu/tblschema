@@ -1,0 +1,89 @@
+Table:
+    type: entity
+    table: plf_tbl_user
+    options:
+        charset: utf8mb4
+        collate: utf8mb4_general_ci
+        comment: 用户表注释
+    id:
+        id:
+            type: integer unsigned
+            nullable: false
+            generator: AUTO_INCREMENT
+            
+    indexes:
+        idx_user_nickname:
+            columns:
+                - username
+                - nickname
+
+        idx_password:
+            columns:
+                - password
+
+        idx_age:
+            columns:
+                - age
+
+    unique_indexes:
+        
+        unq_address_username:
+            columns:
+                - address
+                - username
+
+        unq_phone:
+            columns:
+                - phone
+    fields:
+
+        username:
+            type: varchar
+            nullable: false
+            comment: 用户名
+
+        nickname:
+            type: varchar
+            nullable: true
+            comment: 昵称
+            default: 不填写昵称默认为狗蛋
+
+        password:
+            type: varchar
+            nullable: true
+            comment: 密码 
+
+        age:
+            type: integer unsigned
+            nullable: true
+            comment: 年龄（非负整数,默认3岁）
+            default: 3
+
+        address:
+            type: varchar(222)
+            nullable: true
+            comment: 地址
+            default: 上海市
+
+        intro:
+            type: longtext
+            nullable: true
+            default: "xxxx"  #longtext写default没有用的哦，因为数据库里不支持某些类型有默认值
+            comment: 简单介绍
+
+        phone:
+            type: varchar(11)
+            nullable: true
+            comment: 手机号(可以为空,长度11)
+
+        created_at:
+            type: datetime
+            nullable: false
+            generator: default current_timestamp
+            comment: 创建记录的时间，默认自动创建
+
+        updated_at:
+            type: datetime
+            nullable: false
+            generator: on update current_timestamp
+            comment: 上一次更新时间，默认自动更新
