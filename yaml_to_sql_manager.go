@@ -536,7 +536,13 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		if sqlColumnsSerialize[sc.ColumnName] == nil {
 			sqlColumnsSerialize[sc.ColumnName] = map[string]string{}
 		}
+		if !strings.Contains(sc.ColumnType, "varchar") && strings.Contains(sc.ColumnType, "(") {
+			b := strings.Index(sc.ColumnType, "(")
+			e := strings.Index(sc.ColumnType, ")")
+			sc.ColumnType = sc.ColumnType[:b] + sc.ColumnType[e+1:]
+		}
 		sqlColumnsSerialize[sc.ColumnName]["type"] = sc.ColumnType
+
 		if strings.ToLower(sc.IsNullable) == "yes" {
 			sqlColumnsSerialize[sc.ColumnName]["nullable"] = "true"
 		} else {
@@ -646,13 +652,13 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 			//generator
 			sqlg := strings.ToLower(value.Get("generator").String())
 			if tbl.Get("fields." + key.String() + ".generator").Exists() {
-				if !strings.Contains(sqlg, "default_generated") {
-					if strings.Compare(sqlg,
-						strings.ToLower(tbl.Get("fields."+key.String()+".generator").String())) != 0 {
-						refresh = true
-						yy += "自动/"
-					}
-				}
+				// if !strings.Contains(sqlg, "default_generated") {
+				// 	if strings.Compare(sqlg,
+				// 		strings.ToLower(tbl.Get("fields."+key.String()+".generator").String())) != 0 {
+				// 		refresh = true
+				// 		yy += "自动/"
+				// 	}
+				// }
 
 			} else {
 				if value.Get("generator").String() != "" && !strings.Contains(sqlg, "default_generated") {
