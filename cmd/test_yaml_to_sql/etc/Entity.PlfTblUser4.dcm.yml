@@ -93,11 +93,11 @@ Table:
         created_at:
             type: datetime
             nullable: false
-            generator: default current_timestamp
+            # generator: default current_timestamp  部分数据库不支持则不写
             comment: 创建记录的时间，默认自动创建
 
         updated_at:
             type: datetime
             nullable: true
-            generator: on update current_timestamp
+            # generator: on update current_timestamp  部分数据库不支持则不写
             comment: 上一次更新时间，默认自动更新
