@@ -43,6 +43,7 @@ var sqlTypeToGoType = map[string]string{
 	"longblob":           "string",
 	"binary":             "string",
 	"varbinary":          "string",
+	"json":               "string",
 
 	"date":      "time.Time", //
 	"datetime":  "time.Time", //
@@ -53,6 +54,7 @@ var sqlTypeToGoType = map[string]string{
 	"datetime_string":  "string", // time.Time
 	"timestamp_string": "string", // time.Time
 	"time_string":      "string", // time.Time
+
 }
 
 const (
