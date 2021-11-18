@@ -331,9 +331,9 @@ func (ts *TblToStructHandler) getColumns() {
 		case ORM:
 			tag = fmt.Sprintf("`orm:\"%s\" ", col.ColumnName)
 		case GORM:
-			tag = fmt.Sprintf("`gorm:\"column:%s,omitempty\" ", col.ColumnName)
+			tag = fmt.Sprintf("`gorm:\"column:%s\" ", col.ColumnName)
 		default:
-			tag = fmt.Sprintf("`gorm:\"column:%s,omitempty\" ", col.ColumnName)
+			tag = fmt.Sprintf("`gorm:\"column:%s\" ", col.ColumnName)
 		}
 		for _, v := range ts.tblStructColumnInfo.OtherTag {
 			if v != "" {
