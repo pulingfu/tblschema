@@ -121,9 +121,10 @@ type TblToStructHandler struct {
 	dsn string   //数据库连接dsn,列：用户:密码@(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local
 	db  *gorm.DB //数据库连接
 
-	tableName string //要生成model的数据库表名
-	savePath  string //保存model文件的位置
-	timeType  string //时间类型对应go类型
+	tableName          string //要生成model的数据库表名
+	savePath           string //保存model文件的位置
+	timeType           string //时间类型对应go类型
+	nullableValuePoint bool   //可null字段是否设置为指针
 
 	packageInfo         packageInfo         //模型文件包名配置
 	tblStructNameInfo   tblStructNameInfo   //结构体模型名配置
@@ -160,6 +161,7 @@ type tblStructColumnInfo struct {
 
 func NewTblToStructHandler() *TblToStructHandler {
 	return &TblToStructHandler{
+		nullableValuePoint: true,
 		packageInfo: packageInfo{
 			PackageName:   "model",
 			PackageSuffix: "",
@@ -196,6 +198,10 @@ func (ts *TblToStructHandler) SetSavePath(savePath string) *TblToStructHandler {
 }
 func (ts *TblToStructHandler) SetTableName(tableName string) *TblToStructHandler {
 	ts.tableName = tableName
+	return ts
+}
+func (ts *TblToStructHandler) SetIsNullableValuePoint(nullableValuePoint bool) *TblToStructHandler {
+	ts.nullableValuePoint = nullableValuePoint
 	return ts
 }
 
@@ -363,7 +369,7 @@ func (ts *TblToStructHandler) getColumns() {
 	ts.tblStructColumnInfo.MaxLenFieldType = 0
 	var tscolunm []column
 	for _, col := range cols {
-		if col.Nullable == "YES" {
+		if col.Nullable == "YES" && ts.nullableValuePoint {
 			col.Type = fmt.Sprintf("point_%s", col.Type)
 		}
 		switch ts.timeType {
