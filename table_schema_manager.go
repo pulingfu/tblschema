@@ -55,6 +55,50 @@ var sqlTypeToGoType = map[string]string{
 	"timestamp_string": "string", // time.Time
 	"time_string":      "string", // time.Time
 
+	//canNullAble
+	"point_int":                "*int",
+	"point_integer":            "*int",
+	"point_tinyint":            "*int",
+	"point_smallint":           "*int",
+	"point_mediumint":          "*int",
+	"point_bigint":             "*int",
+	"point_int unsigned":       "*int",
+	"point_integer unsigned":   "*int",
+	"point_tinyint unsigned":   "*int",
+	"point_smallint unsigned":  "*int",
+	"point_mediumint unsigned": "*int",
+	"point_bigint unsigned":    "*int",
+	"point_bit":                "*int",
+	"point_float":              "*float64",
+	"point_double":             "*float64",
+	"point_decimal":            "*float64",
+	"point_bool":               "*bool",
+	"point_enum":               "*string",
+	"point_set":                "*string",
+	"point_varchar":            "*string",
+	"point_char":               "*string",
+	"point_tinytext":           "*string",
+	"point_mediumtext":         "*string",
+	"point_text":               "*string",
+	"point_longtext":           "*string",
+	"point_blob":               "*string",
+	"point_tinyblob":           "*string",
+	"point_mediumblob":         "*string",
+	"point_longblob":           "*string",
+	"point_binary":             "*string",
+	"point_varbinary":          "*string",
+	"point_json":               "*string",
+
+	"point_date":      "*time.Time", //
+	"point_datetime":  "*time.Time", //
+	"point_timestamp": "*time.Time", //
+	"point_time":      "*time.Time", //
+
+	"point_date_string":      "*string", // time.Time
+	"point_datetime_string":  "*string", // time.Time
+	"point_timestamp_string": "*string", // time.Time
+	"point_time_string":      "*string", // time.Time
+
 }
 
 const (
@@ -319,6 +363,9 @@ func (ts *TblToStructHandler) getColumns() {
 	ts.tblStructColumnInfo.MaxLenFieldType = 0
 	var tscolunm []column
 	for _, col := range cols {
+		if col.Nullable == "YES" {
+			col.Type = fmt.Sprintf("point_%s", col.Type)
+		}
 		switch ts.timeType {
 		case TIMETYPE_STRING:
 			switch col.Type {
