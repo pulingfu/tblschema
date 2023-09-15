@@ -3,7 +3,8 @@ package tblschema
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
+
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -59,7 +60,7 @@ func (ts *YamlToSqlHandler) SetYamlPath(yamlPath string) *YamlToSqlHandler {
 
 func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 
-	files, err := ioutil.ReadDir(ts.YamlPath)
+	files, err := os.ReadDir(ts.YamlPath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -79,7 +80,7 @@ func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 	for _, v := range ts.yamlFileFullPaths {
 
-		yamlFile, err := ioutil.ReadFile(v)
+		yamlFile, err := os.ReadFile(v)
 		if err != nil {
 			fmt.Println(err.Error())
 		}

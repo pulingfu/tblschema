@@ -54,7 +54,7 @@ type SqlTableColumns struct {
 	IsNullable    string  `gorm:"column:IS_NULLABLE"`
 	DataType      string  `gorm:"column:DATA_TYPE"`
 	ColumnType    string  `gorm:"column:COLUMN_TYPE"`
-	Length        string  `gorm:"column:CHARACTER_MAXIMUM_LENGTH"`
+	Length        *string `gorm:"column:CHARACTER_MAXIMUM_LENGTH"`
 	ColumnComment string  `gorm:"column:COLUMN_COMMENT"`
 	Extra         string  `gorm:"column:EXTRA"`
 }

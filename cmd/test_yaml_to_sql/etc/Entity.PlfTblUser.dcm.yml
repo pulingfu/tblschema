@@ -46,7 +46,7 @@ Table:
             type: varchar
             nullable: true
             comment: 昵称
-            default: 不填写昵称默认为狗蛋
+            default: 不填写昵称默认为
 
         password:
             type: varchar
