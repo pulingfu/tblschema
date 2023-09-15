@@ -415,8 +415,8 @@ func (ts *YamlToSqlHandler) doSqlSafe() *YamlToSqlHandler {
 				for _, subsql := range subsqls {
 
 					ss := strings.ReplaceAll(subsql, ";", "")
-					ss = strings.ReplaceAll(subsql, " ", "")
-					ss = strings.ReplaceAll(subsql, "\n", "")
+					ss = strings.ReplaceAll(ss, " ", "")
+					ss = strings.ReplaceAll(ss, "\n", "")
 					if ss == "" {
 						continue
 					}
@@ -480,8 +480,8 @@ func (ts *YamlToSqlHandler) doSql() *YamlToSqlHandler {
 			for _, subsql := range subsqls {
 
 				ss := strings.ReplaceAll(subsql, ";", "")
-				ss = strings.ReplaceAll(subsql, " ", "")
-				ss = strings.ReplaceAll(subsql, "\n", "")
+				ss = strings.ReplaceAll(ss, " ", "")
+				ss = strings.ReplaceAll(ss, "\n", "")
 				if ss == "" {
 					continue
 				}
@@ -527,8 +527,8 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		Where("TABLE_SCHEMA=database()").
 		Where("TABLE_NAME=?", tname).
 		Find(&sqlColumns)
-	var sqlColumnsSerialize information_schema.SqlColumnsSerialize
-	sqlColumnsSerialize = map[string]map[string]string{}
+	var sqlColumnsSerialize = information_schema.SqlColumnsSerialize{}
+	// sqlColumnsSerialize = map[string]map[string]string{}
 	for _, sc := range sqlColumns {
 		if strings.ToLower(sc.ColumnName) == "id" {
 			continue
@@ -550,7 +550,11 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		}
 
 		sqlColumnsSerialize[sc.ColumnName]["comment"] = sc.ColumnComment
-		sqlColumnsSerialize[sc.ColumnName]["default"] = sc.ColumnDefault
+		if sc.ColumnDefault == nil {
+			sqlColumnsSerialize[sc.ColumnName]["default"] = ""
+		} else {
+			sqlColumnsSerialize[sc.ColumnName]["default"] = *sc.ColumnDefault
+		}
 		sqlColumnsSerialize[sc.ColumnName]["generator"] = sc.Extra
 	}
 	sqlColumnsJ, err := json.Marshal(&sqlColumnsSerialize)
@@ -1042,7 +1046,7 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	return sql
 }
 
-//校验yml的合法行
+// 校验yml的合法行
 func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 	for k, table := range ts.tables {
 		tbJson := gjson.Get(table, "Table")

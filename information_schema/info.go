@@ -48,13 +48,13 @@ type SqlIndexes struct {
 }
 
 type SqlTableColumns struct {
-	TableName     string `gorm:"column:TABLE_NAME"`
-	ColumnName    string `gorm:"column:COLUMN_NAME"`
-	ColumnDefault string `gorm:"column:COLUMN_DEFAULT"`
-	IsNullable    string `gorm:"column:IS_NULLABLE"`
-	DataType      string `gorm:"column:DATA_TYPE"`
-	ColumnType    string `gorm:"column:COLUMN_TYPE"`
-	Length        string `gorm:"column:CHARACTER_MAXIMUM_LENGTH"`
-	ColumnComment string `gorm:"column:COLUMN_COMMENT"`
-	Extra         string `gorm:"column:EXTRA"`
+	TableName     string  `gorm:"column:TABLE_NAME"`
+	ColumnName    string  `gorm:"column:COLUMN_NAME"`
+	ColumnDefault *string `gorm:"column:COLUMN_DEFAULT"`
+	IsNullable    string  `gorm:"column:IS_NULLABLE"`
+	DataType      string  `gorm:"column:DATA_TYPE"`
+	ColumnType    string  `gorm:"column:COLUMN_TYPE"`
+	Length        string  `gorm:"column:CHARACTER_MAXIMUM_LENGTH"`
+	ColumnComment string  `gorm:"column:COLUMN_COMMENT"`
+	Extra         string  `gorm:"column:EXTRA"`
 }
