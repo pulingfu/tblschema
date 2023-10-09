@@ -552,7 +552,7 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 
 		sqlColumnsSerialize[sc.ColumnName]["comment"] = sc.ColumnComment
 		if sc.ColumnDefault == nil {
-			sqlColumnsSerialize[sc.ColumnName]["default"] = ""
+			// sqlColumnsSerialize[sc.ColumnName]["default"] = ""
 		} else {
 			sqlColumnsSerialize[sc.ColumnName]["default"] = *sc.ColumnDefault
 		}
@@ -640,8 +640,13 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 					}
 				} else {
 					if tbl.Get("fields." + key.String() + ".default").Exists() {
-						if strings.Compare(value.Get("default").String(),
-							tbl.Get("fields."+key.String()+".default").String()) != 0 {
+						if value.Get("default").Exists() {
+							if strings.Compare(value.Get("default").String(),
+								tbl.Get("fields."+key.String()+".default").String()) != 0 {
+								refresh = true
+								yy += "默认/"
+							}
+						} else {
 							refresh = true
 							yy += "默认/"
 						}
