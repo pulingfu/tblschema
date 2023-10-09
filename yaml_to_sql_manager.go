@@ -225,7 +225,7 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 				}
 				if value.Get("nullable").Bool() {
 					//不能有默认值的或者不写默认值
-					if def == "" || isNoDefaultType(columnType) {
+					if !value.Get("default").Exists() || isNoDefaultType(columnType) {
 						if isNoDefaultType(columnType) {
 							columns = fmt.Sprintf("%s\t%s %s COMMENT '%s' ,\n",
 								columns,
@@ -255,7 +255,7 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 					}
 
 				} else {
-					if def == "" || isNoDefaultType(columnType) {
+					if !value.Get("default").Exists() || isNoDefaultType(columnType) {
 						if isNoDefaultType(columnType) {
 							columns = fmt.Sprintf("%s\t%s %s NOT NULL COMMENT '%s' ,\n",
 								columns,
