@@ -1,0 +1,164 @@
+package dvaplugin
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/tidwall/gjson"
+	"gorm.io/gorm"
+)
+
+type RELATION_TYPE = int
+
+const (
+	HAS_ONE   RELATION_TYPE = iota //加载一个子对象
+	HAS_MANEY                      //加载多个子对象/数组
+	BELONG_TO                      //直接加载数据给到父节点
+)
+
+type RelationLoader struct {
+	input         interface{}   //输入
+	result        interface{}   //输出
+	childModel    interface{}   //子模型
+	compareFunc   CompareFun    //比较方法
+	fakey         string        //父
+	sukey         string        //子
+	cdb           *gorm.DB      //条件db
+	relation_type RELATION_TYPE //关系
+	err           error         //错误
+
+	Stash             map[string]*RelationLoader //关系网
+	OpenPrintErrStack bool                       //是否开启打印错误堆栈
+}
+
+func (r *RelationLoader) GetInput() interface{} {
+	return r.input
+}
+
+func (r *RelationLoader) GetResult() interface{} {
+	return r.result
+}
+func (r *RelationLoader) Error() error {
+	return r.err
+}
+func NewRelationLoader(input interface{}, OpenPrintErrStack bool) *RelationLoader {
+	return &RelationLoader{
+		input:             input,
+		Stash:             map[string]*RelationLoader{},
+		OpenPrintErrStack: OpenPrintErrStack,
+	}
+}
+
+func (r *RelationLoader) AddRelation(relation_type RELATION_TYPE, relation, fakey, sukey string,
+	Child interface{}, compareFunc CompareFun, cdb *gorm.DB) *RelationLoader {
+	var err error
+	func(err *error) {
+		defer catch(err, r.OpenPrintErrStack)
+		rls := strings.Split(relation, ".")
+		new_sr := &RelationLoader{
+			childModel:    Child,
+			compareFunc:   compareFunc,
+			cdb:           cdb,
+			fakey:         fakey,
+			sukey:         sukey,
+			relation_type: relation_type,
+		}
+		r.setRelation(rls, new_sr)
+	}(&err)
+	if err != nil {
+		r.err = err
+	}
+	return r
+}
+
+func (r *RelationLoader) setRelation(relations []string, sr *RelationLoader) *RelationLoader {
+	if len(relations) > 1 {
+		_r, ok := r.Stash[relations[0]]
+		if !ok {
+			panic(fmt.Sprintf("欲设置的前置关系[%s]不存在[%s]", relations[0], relations))
+		}
+		r = _r.setRelation(relations[1:], sr)
+	} else {
+		if r.Stash == nil {
+			r.Stash = map[string]*RelationLoader{}
+		}
+		r.Stash[relations[0]] = sr
+	}
+	return r
+}
+
+func (r *RelationLoader) LoadResult(db *gorm.DB) *RelationLoader {
+	var err error
+	func(err *error) {
+		defer catch(err, r.OpenPrintErrStack)
+		r.load(db)
+	}(&err)
+	if err != nil {
+		r.err = err
+	}
+	return r
+}
+
+func (r *RelationLoader) load(db *gorm.DB) {
+
+	input_v := VtoJson(r.input)
+	r.result = r.input
+	//取key
+	var fakeys = map[string][]string{}
+	for rk, rv := range r.Stash {
+		for _, inv := range input_v.Array() {
+			fakeys[rk] = append(fakeys[rk], inv.Get(rv.fakey).String())
+		}
+	}
+	//加载子项
+	// var subcollect = map[string]interface{}{}
+	for rk, keys := range fakeys {
+		rv := r.Stash[rk]
+		rv_mt_slice_t := reflect.SliceOf(reflect.TypeOf(rv.childModel))
+		rv_silce := reflect.New(rv_mt_slice_t).Interface()
+		subcq := db
+		if rv.cdb != nil {
+			subcq = rv.cdb
+		} else {
+			subcq = subcq.Model(rv.childModel)
+		}
+		rows, err := subcq.Where(rv.sukey+" in ?", keys).
+			Rows()
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			element := reflect.New(reflect.TypeOf(rv.childModel)).Interface()
+			db.ScanRows(rows, element)
+			reflect.ValueOf(rv_silce).Elem().Set(reflect.Append(reflect.ValueOf(rv_silce).Elem(),
+				reflect.ValueOf(element).Elem()))
+		}
+
+		//填入结果
+		if len(rv.Stash) > 0 {
+			rv.input = rv_silce
+			rv.load(db)
+		} else {
+			rv.result = rv_silce
+		}
+
+		//生成结果
+		if rv.compareFunc == nil {
+			rv.compareFunc = func(p, s gjson.Result) bool {
+				return p.Get(rv.fakey).String() != "" && p.Get(rv.fakey).String() == s.Get(rv.sukey).String()
+			}
+		}
+		switch rv.relation_type {
+		case HAS_ONE:
+			r.result, _ = HasOne(r.result, rv.result, rk, rv.compareFunc)
+		case HAS_MANEY:
+			r.result, _ = HasMany(r.result, rv.result, rk, rv.compareFunc)
+		case BELONG_TO:
+			r.result = BelongTo(r.result, rv.result, rk)
+		default:
+		}
+	}
+
+}
