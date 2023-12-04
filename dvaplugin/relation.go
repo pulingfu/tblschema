@@ -106,14 +106,23 @@ func (r *RelationLoader) load(db *gorm.DB) {
 	r.result = r.input
 	//取key
 	var fakeys = map[string][]string{}
+	var keysunq = map[string]map[string]bool{}
 	for rk, rv := range r.Stash {
 		for _, inv := range input_v.Array() {
-			fakeys[rk] = append(fakeys[rk], inv.Get(rv.fakey).String())
+			value := inv.Get(rv.fakey).String()
+			if _, ok := keysunq[inv.String()]; !ok {
+				keysunq[inv.String()] = map[string]bool{}
+			}
+			if _, ok := keysunq[inv.String()][value]; !ok {
+				keysunq[inv.String()][value] = true
+				fakeys[rk] = append(fakeys[rk], value)
+			}
 		}
 	}
 	//加载子项
 	// var subcollect = map[string]interface{}{}
 	for rk, keys := range fakeys {
+
 		rv := r.Stash[rk]
 		rv_mt_slice_t := reflect.SliceOf(reflect.TypeOf(rv.childModel))
 		rv_silce := reflect.New(rv_mt_slice_t).Interface()
