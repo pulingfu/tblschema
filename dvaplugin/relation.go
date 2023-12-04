@@ -110,11 +110,11 @@ func (r *RelationLoader) load(db *gorm.DB) {
 	for rk, rv := range r.Stash {
 		for _, inv := range input_v.Array() {
 			value := inv.Get(rv.fakey).String()
-			if _, ok := keysunq[inv.String()]; !ok {
-				keysunq[inv.String()] = map[string]bool{}
+			if _, ok := keysunq[rk]; !ok {
+				keysunq[rk] = map[string]bool{}
 			}
-			if _, ok := keysunq[inv.String()][value]; !ok {
-				keysunq[inv.String()][value] = true
+			if _, ok := keysunq[rk][value]; !ok {
+				keysunq[rk][value] = true
 				fakeys[rk] = append(fakeys[rk], value)
 			}
 		}
