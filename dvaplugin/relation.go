@@ -13,9 +13,11 @@ type RELATION_TYPE = int
 
 const (
 	HAS_ONE   RELATION_TYPE = iota //加载一个子对象
-	HAS_MANEY                      //加载多个子对象/数组
+	HAS_MANY                       //加载多个子对象/数组
 	BELONG_TO                      //直接加载数据给到父节点
 )
+
+type RELARTION_NET map[string]*RelationLoader
 
 type RelationLoader struct {
 	input         interface{}   //输入
@@ -28,8 +30,8 @@ type RelationLoader struct {
 	relation_type RELATION_TYPE //关系
 	err           error         //错误
 
-	Stash             map[string]*RelationLoader //关系网
-	OpenPrintErrStack bool                       //是否开启打印错误堆栈
+	Stash             RELARTION_NET //关系网
+	OpenPrintErrStack bool          //是否开启打印错误堆栈
 }
 
 func (r *RelationLoader) GetInput() interface{} {
@@ -45,7 +47,7 @@ func (r *RelationLoader) Error() error {
 func NewRelationLoader(input interface{}, OpenPrintErrStack bool) *RelationLoader {
 	return &RelationLoader{
 		input:             input,
-		Stash:             map[string]*RelationLoader{},
+		Stash:             RELARTION_NET{},
 		OpenPrintErrStack: OpenPrintErrStack,
 	}
 }
@@ -81,7 +83,7 @@ func (r *RelationLoader) setRelation(relations []string, sr *RelationLoader) *Re
 		r = _r.setRelation(relations[1:], sr)
 	} else {
 		if r.Stash == nil {
-			r.Stash = map[string]*RelationLoader{}
+			r.Stash = RELARTION_NET{}
 		}
 		r.Stash[relations[0]] = sr
 	}
@@ -109,13 +111,20 @@ func (r *RelationLoader) load(db *gorm.DB) {
 	var keysunq = map[string]map[string]bool{}
 	for rk, rv := range r.Stash {
 		for _, inv := range input_v.Array() {
-			value := inv.Get(rv.fakey).String()
+			value := inv.Get(rv.fakey)
+			if value.Value() == nil {
+				continue
+			}
+			val := value.String()
+			if val == "" {
+				continue
+			}
 			if _, ok := keysunq[rk]; !ok {
 				keysunq[rk] = map[string]bool{}
 			}
-			if _, ok := keysunq[rk][value]; !ok {
-				keysunq[rk][value] = true
-				fakeys[rk] = append(fakeys[rk], value)
+			if _, ok := keysunq[rk][val]; !ok {
+				keysunq[rk][val] = true
+				fakeys[rk] = append(fakeys[rk], val)
 			}
 		}
 	}
@@ -162,7 +171,7 @@ func (r *RelationLoader) load(db *gorm.DB) {
 		switch rv.relation_type {
 		case HAS_ONE:
 			r.result, _ = HasOne(r.result, rv.result, rk, rv.compareFunc)
-		case HAS_MANEY:
+		case HAS_MANY:
 			r.result, _ = HasMany(r.result, rv.result, rk, rv.compareFunc)
 		case BELONG_TO:
 			r.result = BelongTo(r.result, rv.result, rk)
