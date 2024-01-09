@@ -335,6 +335,25 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 			return true
 		})
 	}
+	if tbl.Get("fulltext_indexes").IsObject() {
+		tbl.Get("fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
+			if value.Get("columns").IsArray() {
+				indexColumns := value.Get("columns").Array()
+				indexKeys := ""
+				for _, ic := range indexColumns {
+					indexKeys = fmt.Sprintf("%s%s,", indexKeys, ic.String())
+				}
+				indexKeys = indexKeys[:len(indexKeys)-1]
+				columns = fmt.Sprintf("%s\tFULLTEXT INDEX %s (%s),\n",
+					columns,
+					key.String(),
+					indexKeys,
+				)
+			}
+
+			return true
+		})
+	}
 
 	if !noId {
 		columns = fmt.Sprintf("%s\t%s\n",
@@ -962,6 +981,48 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 			return true
 		})
 	}
+	if gjson.Get(string(sqlIndexesJ), "fulltext_indexes").Exists() {
+		gjson.Get(string(sqlIndexesJ), "fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
+			if tbl.Get("fulltext_indexes." + key.String()).Exists() {
+				if strings.Compare(value.String(), tbl.Get("fulltext_indexes."+key.String()).String()) == 0 {
+					// keepThisKey = true
+					// fmt.Println(">>>>>>保留==")
+					// fmt.Println("unqkey= ", key.String())
+					// fmt.Println("yml= ", tbl.Get("fulltext_indexes."+key.String()).String())
+					// fmt.Println("sql= ", value.String())
+					// fmt.Println("<<<<<===")
+				} else {
+					sql = fmt.Sprintf("%sDROP INDEX %s ON %s;\n",
+						sql,
+						key.String(),
+						tname,
+					)
+					sqlcol := ""
+					for _, v := range tbl.Get("fulltext_indexes." + key.String() + ".columns").Array() {
+						sqlcol = fmt.Sprintf("%s%s,", sqlcol, v)
+					}
+					sqlcol = sqlcol[:len(sqlcol)-1]
+					sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s);\n",
+						sql,
+						key.String(),
+						tname,
+						sqlcol,
+					)
+					// keepThisKey = false
+					// needReaddKey[key.String()] = true
+				}
+			} else {
+				dropIndexesSql = fmt.Sprintf("%sDROP INDEX %s ON %s;\n",
+					dropIndexesSql,
+					key.String(),
+					tname,
+				)
+				// if value.Get("columns")
+				// keepThisKey = false
+			}
+			return true
+		})
+	}
 	if gjson.Get(string(sqlIndexesJ), "indexes").Exists() {
 		gjson.Get(string(sqlIndexesJ), "indexes").ForEach(func(key, value gjson.Result) bool {
 			if tbl.Get("indexes." + key.String()).Exists() {
@@ -1029,6 +1090,23 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 
 		return true
 	})
+	tbl.Get("fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
+
+		if !gjson.Get(string(sqlIndexesJ), "fulltext_indexes."+key.String()).Exists() {
+			sqlcol := ""
+			for _, v := range value.Get("columns").Array() {
+				sqlcol = fmt.Sprintf("%s%s,", sqlcol, v)
+			}
+			sqlcol = sqlcol[:len(sqlcol)-1]
+			sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s);\n",
+				sql,
+				key.String(),
+				tname,
+				sqlcol,
+			)
+		}
+		return true
+	})
 	tbl.Get("indexes").ForEach(func(key, value gjson.Result) bool {
 
 		if !gjson.Get(string(sqlIndexesJ), "indexes."+key.String()).Exists() {
@@ -1046,7 +1124,6 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		}
 		return true
 	})
-
 	sql = fmt.Sprintf("%s%s%s", sql, dropIndexesSql, dropColumnsSql)
 
 	return sql
@@ -1083,6 +1160,21 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 			return true
 		})
 		tbJson.Get("unique_indexes").ForEach(func(key, value gjson.Result) bool {
+			if !value.Get("columns").IsArray() {
+				fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
+				fmt.Printf("\x1b[%dm indexes:'%s' is not array\x1b[0m\n", 31, key.String())
+				panic("配置文件不正确")
+			}
+			for _, v := range value.Get("columns").Array() {
+				if !tbJson.Get("fields." + v.String()).Exists() {
+					fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
+					fmt.Printf("\x1b[%dm indexes columns:'%s' is not find\x1b[0m\n", 31, v.String())
+					panic("配置文件不正确")
+				}
+			}
+			return true
+		})
+		tbJson.Get("fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
 			if !value.Get("columns").IsArray() {
 				fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 				fmt.Printf("\x1b[%dm indexes:'%s' is not array\x1b[0m\n", 31, key.String())

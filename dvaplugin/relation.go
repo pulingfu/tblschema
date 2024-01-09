@@ -29,6 +29,7 @@ type RelationLoader struct {
 	cdb           *gorm.DB      //条件db
 	relation_type RELATION_TYPE //关系
 	err           error         //错误
+	subModifyFunc SubModifyFunc //子数据修改
 
 	Stash             RELARTION_NET //关系网
 	OpenPrintErrStack bool          //是否开启打印错误堆栈
@@ -53,7 +54,7 @@ func NewRelationLoader(input interface{}, OpenPrintErrStack bool) *RelationLoade
 }
 
 func (r *RelationLoader) AddRelation(relation_type RELATION_TYPE, relation, fakey, sukey string,
-	Child interface{}, compareFunc CompareFun, cdb *gorm.DB) *RelationLoader {
+	Child interface{}, compareFunc CompareFun, cdb *gorm.DB, anonps ...interface{}) *RelationLoader {
 	var err error
 	func(err *error) {
 		defer catch(err, r.OpenPrintErrStack)
@@ -65,6 +66,12 @@ func (r *RelationLoader) AddRelation(relation_type RELATION_TYPE, relation, fake
 			fakey:         fakey,
 			sukey:         sukey,
 			relation_type: relation_type,
+		}
+		if len(anonps) > 0 {
+			sf, ok := anonps[0].(func(p, s gjson.Result) gjson.Result)
+			if ok {
+				new_sr.subModifyFunc = sf
+			}
 		}
 		r.setRelation(rls, new_sr)
 	}(&err)
@@ -170,9 +177,9 @@ func (r *RelationLoader) load(db *gorm.DB) {
 		}
 		switch rv.relation_type {
 		case HAS_ONE:
-			r.result, _ = HasOne(r.result, rv.result, rk, rv.compareFunc)
+			r.result, _ = HasOneV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
 		case HAS_MANY:
-			r.result, _ = HasMany(r.result, rv.result, rk, rv.compareFunc)
+			r.result, _ = HasManyV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
 		case BELONG_TO:
 			r.result = BelongTo(r.result, rv.result, rk)
 		default:

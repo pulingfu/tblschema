@@ -16,6 +16,7 @@ func main() {
 	// InitConfig()
 	yts := tblschema.NewYamlToSqlHandler().SetYamlPath("./etc/").
 		SetDsn("root:tiger@(127.0.0.1:3306)/pulingfu?charset=utf8mb4&parseTime=True&loc=Local")
+
 	yts.ExecuteSchemaSafeCheck()
 }
 
