@@ -68,7 +68,7 @@ func (r *RelationLoader) AddRelation(relation_type RELATION_TYPE, relation, fake
 			relation_type: relation_type,
 		}
 		if len(anonps) > 0 {
-			sf, ok := anonps[0].(func(p, s gjson.Result) gjson.Result)
+			sf, ok := anonps[0].(func(p, s gjson.Result) (gjson.Result, gjson.Result))
 			if ok {
 				new_sr.subModifyFunc = sf
 			}

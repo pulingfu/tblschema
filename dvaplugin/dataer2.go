@@ -4,7 +4,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type SubModifyFunc func(p, s gjson.Result) gjson.Result
+type SubModifyFunc func(p, s gjson.Result) (gjson.Result, gjson.Result)
 
 func HasManyV2(input interface{}, subGroup interface{}, relation string, f CompareFun, smf SubModifyFunc) (interface{}, error) {
 
@@ -31,7 +31,9 @@ func HasManyV2(input interface{}, subGroup interface{}, relation string, f Compa
 			for _, sv := range sub_g_v.Array() {
 				if f(iv, sv) {
 					if smf != nil {
-						filter = append(filter, smf(iv, sv))
+						_iv, _sv := smf(iv, sv)
+						iv = _iv
+						filter = append(filter, _sv)
 					} else {
 						filter = append(filter, sv)
 					}
@@ -54,7 +56,9 @@ func HasManyV2(input interface{}, subGroup interface{}, relation string, f Compa
 		for _, sv := range sub_g_v.Array() {
 			if f(input_v, sv) {
 				if smf != nil {
-					filter = append(filter, smf(input_v, sv))
+					_input_v, _sv := smf(input_v, sv)
+					input_v = _input_v
+					filter = append(filter, _sv)
 				} else {
 					filter = append(filter, sv)
 				}
@@ -86,7 +90,7 @@ func HasOneV2(input interface{}, subGroup interface{}, relation string, f Compar
 			})
 
 			if smf != nil {
-				match_v = smf(iv, match_v)
+				iv, match_v = smf(iv, match_v)
 			}
 			result = append(result, VSetV(iv, match_v.Value(), relation).Value())
 		}
@@ -100,7 +104,7 @@ func HasOneV2(input interface{}, subGroup interface{}, relation string, f Compar
 			return f(input_v, sv)
 		})
 		if smf != nil {
-			match_v = smf(input_v, match_v)
+			input_v, match_v = smf(input_v, match_v)
 		}
 		return VSetV(input_v, match_v.Value(), relation).Value(), nil
 
