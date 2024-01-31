@@ -34,7 +34,7 @@ Table:
             - uuid2
   fulltext_indexes:
       fulltext_intro:
-          with_parser: simple
+          with_parser: simple ## 
           columns: 
             - intro 
             # - uuid2
