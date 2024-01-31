@@ -907,25 +907,33 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	var sqlIndexesSerialize information_schema.SqlIndexesSerialize
 	sqlIndexesSerialize.UnqIndexes = map[string]map[string][]string{}
 	sqlIndexesSerialize.Indexes = map[string]map[string][]string{}
+	sqlIndexesSerialize.FulltextIndexes = map[string]map[string][]string{}
 
 	//计算sql
 	for _, sqlIndex := range sqlIndexes {
 		if strings.ToLower(sqlIndex.Key_name) == "primary" {
 			continue
 		}
-		if sqlIndex.Non_unique == 0 {
-			// fmt.Println(sqlIndex.Key_name)
-			if sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name] == nil {
-				sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name] = map[string][]string{}
+		if strings.ToLower(sqlIndex.IndexType) == "fulltext" {
+			if sqlIndexesSerialize.FulltextIndexes[sqlIndex.Key_name] == nil {
+				sqlIndexesSerialize.FulltextIndexes[sqlIndex.Key_name] = map[string][]string{}
 			}
-			sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name]["columns"] = append(sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name]["columns"], sqlIndex.Column_name)
-		}
-		if sqlIndex.Non_unique == 1 {
-			// fmt.Println(sqlIndex.Key_name)
-			if sqlIndexesSerialize.Indexes[sqlIndex.Key_name] == nil {
-				sqlIndexesSerialize.Indexes[sqlIndex.Key_name] = map[string][]string{}
+			sqlIndexesSerialize.FulltextIndexes[sqlIndex.Key_name]["columns"] = append(sqlIndexesSerialize.FulltextIndexes[sqlIndex.Key_name]["columns"], sqlIndex.Column_name)
+		} else if strings.ToLower(sqlIndex.IndexType) == "btree" {
+			if sqlIndex.Non_unique == 0 {
+				// fmt.Println(sqlIndex.Key_name)
+				if sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name] == nil {
+					sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name] = map[string][]string{}
+				}
+				sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name]["columns"] = append(sqlIndexesSerialize.UnqIndexes[sqlIndex.Key_name]["columns"], sqlIndex.Column_name)
 			}
-			sqlIndexesSerialize.Indexes[sqlIndex.Key_name]["columns"] = append(sqlIndexesSerialize.Indexes[sqlIndex.Key_name]["columns"], sqlIndex.Column_name)
+			if sqlIndex.Non_unique == 1 {
+				// fmt.Println(sqlIndex.Key_name)
+				if sqlIndexesSerialize.Indexes[sqlIndex.Key_name] == nil {
+					sqlIndexesSerialize.Indexes[sqlIndex.Key_name] = map[string][]string{}
+				}
+				sqlIndexesSerialize.Indexes[sqlIndex.Key_name]["columns"] = append(sqlIndexesSerialize.Indexes[sqlIndex.Key_name]["columns"], sqlIndex.Column_name)
+			}
 		}
 	}
 
@@ -984,7 +992,9 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	if gjson.Get(string(sqlIndexesJ), "fulltext_indexes").Exists() {
 		gjson.Get(string(sqlIndexesJ), "fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
 			if tbl.Get("fulltext_indexes." + key.String()).Exists() {
-				if strings.Compare(value.String(), tbl.Get("fulltext_indexes."+key.String()).String()) == 0 {
+				// fmt.Println(tbl.Get("fulltext_indexes." + key.String() + ".columns").String())
+				// fmt.Println(tbl.Get("fulltext_indexes." + key.String() + ".with_parser").String())
+				if strings.Compare(value.Get("columns").String(), tbl.Get("fulltext_indexes."+key.String()+".columns").String()) == 0 {
 					// keepThisKey = true
 					// fmt.Println(">>>>>>保留==")
 					// fmt.Println("unqkey= ", key.String())
@@ -1002,11 +1012,16 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 						sqlcol = fmt.Sprintf("%s%s,", sqlcol, v)
 					}
 					sqlcol = sqlcol[:len(sqlcol)-1]
-					sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s);\n",
+					with_parser := tbl.Get("fulltext_indexes." + key.String() + ".with_parser").String()
+					if with_parser == "" {
+						with_parser = "ngram"
+					}
+					sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s) WITH PARSER %s;\n",
 						sql,
 						key.String(),
 						tname,
 						sqlcol,
+						with_parser,
 					)
 					// keepThisKey = false
 					// needReaddKey[key.String()] = true
@@ -1091,18 +1106,24 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		return true
 	})
 	tbl.Get("fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
-
 		if !gjson.Get(string(sqlIndexesJ), "fulltext_indexes."+key.String()).Exists() {
 			sqlcol := ""
 			for _, v := range value.Get("columns").Array() {
 				sqlcol = fmt.Sprintf("%s%s,", sqlcol, v)
 			}
 			sqlcol = sqlcol[:len(sqlcol)-1]
-			sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s);\n",
+
+			with_parser := tbl.Get("fulltext_indexes." + key.String() + ".with_parser").String()
+			if with_parser == "" {
+				with_parser = "ngram"
+			}
+
+			sql = fmt.Sprintf("%sCREATE FULLTEXT INDEX %s ON %s(%s) WITH PARSER %s;\n",
 				sql,
 				key.String(),
 				tname,
 				sqlcol,
+				with_parser,
 			)
 		}
 		return true

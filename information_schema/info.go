@@ -19,8 +19,9 @@ type YmlIndexes struct {
 // type YmlIndexes
 
 type SqlIndexesSerialize struct {
-	UnqIndexes map[string]map[string][]string `json:"unique_indexes"`
-	Indexes    map[string]map[string][]string `json:"indexes"`
+	UnqIndexes      map[string]map[string][]string `json:"unique_indexes"`
+	Indexes         map[string]map[string][]string `json:"indexes"`
+	FulltextIndexes map[string]map[string][]string `json:"fulltext_indexes"`
 }
 
 type SqlColumnsSerialize map[string]map[string]string
@@ -44,6 +45,7 @@ type SqlIndexes struct {
 	Key_name     string `gorm:"column:Key_name"`
 	Seq_in_index int    `gorm:"column:Seq_in_index"`
 	Column_name  string `gorm:"column:Column_name"`
+	IndexType    string `gorm:"column:Index_type"`
 	// Column_name string `gorm:"column:Column_name"`
 }
 
