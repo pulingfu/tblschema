@@ -152,17 +152,19 @@ func (r *RelationLoader) load(db *gorm.DB) {
 		} else {
 			subcq = subcq.Model(rv.childModel)
 		}
-		rows, err := subcq.Where(rv.sukey+" in ?", keys).
-			Rows()
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			element := reflect.New(reflect.TypeOf(rv.childModel)).Interface()
-			db.ScanRows(rows, element)
-			reflect.ValueOf(rv_silce).Elem().Set(reflect.Append(reflect.ValueOf(rv_silce).Elem(),
-				reflect.ValueOf(element).Elem()))
+		if len(keys) > 0 {
+			rows, err := subcq.Where(rv.sukey+" in ?", keys).
+				Rows()
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer rows.Close()
+			for rows.Next() {
+				element := reflect.New(reflect.TypeOf(rv.childModel)).Interface()
+				db.ScanRows(rows, element)
+				reflect.ValueOf(rv_silce).Elem().Set(reflect.Append(reflect.ValueOf(rv_silce).Elem(),
+					reflect.ValueOf(element).Elem()))
+			}
 		}
 
 		//填入结果
