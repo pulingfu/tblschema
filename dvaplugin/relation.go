@@ -123,6 +123,10 @@ func (r *RelationLoader) load(db *gorm.DB) {
 				continue
 			}
 			val := value.String()
+			// 初始化
+			if _, ok := fakeys[rk]; !ok {
+				fakeys[rk] = []string{}
+			}
 			if val == "" {
 				continue
 			}
