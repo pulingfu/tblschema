@@ -1326,7 +1326,23 @@ func (ts *YamlToSqlHandler) LoadSchema() *YamlToSqlHandler {
 	return ts
 }
 
+func (ts *YamlToSqlHandler) trimSql() *YamlToSqlHandler {
+
+	var newsql []string
+	for _, v := range ts.sql {
+		vv := strings.ReplaceAll(v, "\n", "")
+		vv = strings.ReplaceAll(vv, " ", "")
+		if vv == "" {
+			continue
+		}
+		newsql = append(newsql, vv)
+	}
+	ts.sql = newsql
+	return ts
+}
+
 func (ts *YamlToSqlHandler) VerifyIsCleanSchema() bool {
+	ts.trimSql()
 	return len(ts.sql) < 1
 }
 
