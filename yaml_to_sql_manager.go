@@ -1,9 +1,11 @@
 package tblschema
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 
 	"strings"
 
@@ -16,6 +18,11 @@ import (
 )
 
 type YamlToSqlHandler struct {
+	IsOutputBuildSchema      bool   // 是否输出编译后的结构
+	IsEncryOutputBuildSchema bool   // 是否加密 编译后的结构
+	EncryKey                 string // 加密key
+	BuildSchemaDest          string //
+
 	dsn string   //数据库连接dsn,列：用户:密码@(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local
 	db  *gorm.DB //数据库连接
 
@@ -27,7 +34,11 @@ type YamlToSqlHandler struct {
 }
 
 func NewYamlToSqlHandler() *YamlToSqlHandler {
-	return &YamlToSqlHandler{}
+	return &YamlToSqlHandler{
+		IsOutputBuildSchema:      false,
+		IsEncryOutputBuildSchema: false,
+		BuildSchemaDest:          "./tblschema.value",
+	}
 }
 
 func (ts *YamlToSqlHandler) SetDsn(dsn string) *YamlToSqlHandler {
@@ -58,6 +69,12 @@ func (ts *YamlToSqlHandler) SetYamlPath(yamlPath string) *YamlToSqlHandler {
 	return ts
 }
 
+func (ts *YamlToSqlHandler) SetIsOutputBuildSchema(value bool, encry bool, key string) *YamlToSqlHandler {
+	ts.IsOutputBuildSchema = value
+	ts.IsEncryOutputBuildSchema = encry
+	ts.EncryKey = key
+	return ts
+}
 func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 
 	files, err := os.ReadDir(ts.YamlPath)
@@ -78,6 +95,7 @@ func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 }
 
 func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
+	var buildmapping = map[string]interface{}{}
 	for _, v := range ts.yamlFileFullPaths {
 
 		yamlFile, err := os.ReadFile(v)
@@ -90,6 +108,14 @@ func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 			fmt.Println(err.Error())
 		}
 		jb, err := json.Marshal(&table)
+
+		tvalue := string(jb)
+		tname := gjson.Parse(tvalue).Get("Table.table").String()
+		if _, ok := buildmapping[tname]; ok {
+			fmt.Printf("\x1b[%dm配置文件: %s 序列化失败，重复定义的表 \x1b[0m\n", 31, v)
+			panic(fmt.Sprintf("\x1b[%dm配置文件: %s 序列化失败\x1b[0m\n", 31, v))
+		}
+		buildmapping[tname] = table
 		// t, err := json.Marshal(&table)
 		// fmt.Println("json:", string(jb))
 		if err != nil {
@@ -97,8 +123,67 @@ func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 			panic(fmt.Sprintf("\x1b[%dm配置文件: %s 序列化失败\x1b[0m\n", 31, v))
 		}
 
-		ts.tables = append(ts.tables, string(jb))
+		ts.tables = append(ts.tables, tvalue)
 	}
+
+	if ts.IsOutputBuildSchema {
+		jb, err := json.Marshal(&buildmapping)
+		if err != nil {
+			fmt.Printf("\x1b[%dm 序列化编译产物失败 \x1b[0m\n", 31)
+			panic(fmt.Sprintf("\x1b[%dm 序列化编译产物失败 \x1b[0m\n", 31))
+		}
+
+		bvalue := string(jb)
+		if ts.IsEncryOutputBuildSchema {
+			bvalue, err = EncryptString(bvalue, []byte(ts.EncryKey))
+			if err != nil {
+				fmt.Printf("\x1b[%dm 序列化编译产物加密失败: %s \x1b[0m\n", 31, err.Error())
+				panic(fmt.Sprintf("\x1b[%dm 序列化编译产物加密失败: %s \x1b[0m\n", 31, err.Error()))
+			}
+		}
+
+		os.MkdirAll(path.Dir(ts.BuildSchemaDest), os.ModePerm)
+		file, err := os.Create(ts.BuildSchemaDest)
+		if err != nil {
+			fmt.Printf("\x1b[%dm 序列化产物写入失败 \x1b[0m\n", 31)
+			panic(fmt.Sprintf("\x1b[%dm 序列化产物写入失败 %s \x1b[0m\n", 31, err.Error()))
+		}
+		defer file.Close()
+
+		writer := bufio.NewWriter(file)
+		_, err = fmt.Fprint(writer, bvalue)
+		if err != nil {
+			fmt.Printf("\x1b[%dm 序列化编译产物写入失败 %s\x1b[0m\n", 31, err.Error())
+			panic(fmt.Sprintf("\x1b[%dm 序列化编译产物写入失败 %s \x1b[0m\n", 31, err.Error()))
+		}
+		writer.Flush()
+
+	}
+
+	return ts
+}
+
+func (ts *YamlToSqlHandler) loadFromBuildSchema() *YamlToSqlHandler {
+
+	bvalue, err := os.ReadFile("input.txt")
+	if err != nil {
+		fmt.Printf("\x1b[%dm 序列化编译产物读取失败 \x1b[0m\n", 31)
+		panic(fmt.Sprintf("\x1b[%dm 序列化编译产物读取失败 \x1b[0m\n", 31))
+	}
+
+	bvaluestr := string(bvalue)
+	if ts.IsEncryOutputBuildSchema {
+		bvaluestr, err = DecryptString(bvaluestr, []byte(ts.EncryKey))
+		if err != nil {
+			fmt.Printf("\x1b[%dm 序列化编译产物解密失败 \x1b[0m\n", 31)
+			panic(fmt.Sprintf("\x1b[%dm 序列化编译产物解密失败 \x1b[0m\n", 31))
+		}
+	}
+	gjson.Parse(bvaluestr).ForEach(func(key, value gjson.Result) bool {
+		ts.tables = append(ts.tables, value.String())
+		return true
+	})
+
 	return ts
 }
 
@@ -1229,4 +1314,14 @@ func (ts *YamlToSqlHandler) ExecuteSchema() *YamlToSqlHandler {
 		getYamlDatas().verifyYmlFile().doSchema().doSql()
 
 	return ts
+}
+
+func (ts *YamlToSqlHandler) LoadSchema() *YamlToSqlHandler {
+	ts.connectSql()
+	ts.loadFromBuildSchema().verifyYmlFile().doSchema()
+	return ts
+}
+
+func (ts *YamlToSqlHandler) VerifyIsCleanSchema() bool {
+	return len(ts.sql) < 1
 }
