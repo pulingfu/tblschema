@@ -1325,3 +1325,12 @@ func (ts *YamlToSqlHandler) LoadSchema() *YamlToSqlHandler {
 func (ts *YamlToSqlHandler) VerifyIsCleanSchema() bool {
 	return len(ts.sql) < 1
 }
+
+func (ts *YamlToSqlHandler) GetSql() []string {
+	return ts.sql
+}
+
+func (ts *YamlToSqlHandler) DoSql() *YamlToSqlHandler {
+	ts.doSqlSafe()
+	return ts
+}
