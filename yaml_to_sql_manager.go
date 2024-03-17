@@ -1335,7 +1335,7 @@ func (ts *YamlToSqlHandler) trimSql() *YamlToSqlHandler {
 		if vv == "" {
 			continue
 		}
-		newsql = append(newsql, vv)
+		newsql = append(newsql, v)
 	}
 	ts.sql = newsql
 	return ts
