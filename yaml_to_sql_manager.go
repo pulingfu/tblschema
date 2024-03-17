@@ -75,6 +75,10 @@ func (ts *YamlToSqlHandler) SetIsOutputBuildSchema(value bool, encry bool, key s
 	ts.EncryKey = key
 	return ts
 }
+func (ts *YamlToSqlHandler) SetBuildSchemaDest(dest string) *YamlToSqlHandler {
+	ts.BuildSchemaDest = dest
+	return ts
+}
 func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 
 	files, err := os.ReadDir(ts.YamlPath)
@@ -165,7 +169,7 @@ func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 
 func (ts *YamlToSqlHandler) loadFromBuildSchema() *YamlToSqlHandler {
 
-	bvalue, err := os.ReadFile("input.txt")
+	bvalue, err := os.ReadFile(ts.BuildSchemaDest)
 	if err != nil {
 		fmt.Printf("\x1b[%dm 序列化编译产物读取失败 \x1b[0m\n", 31)
 		panic(fmt.Sprintf("\x1b[%dm 序列化编译产物读取失败 \x1b[0m\n", 31))
