@@ -189,6 +189,31 @@ func HasValueInSlice(slices interface{}, value interface{}, match_f interface{})
 	return result, err
 }
 
+// 切片中是否包含值
+func IsValueInSlice(slices interface{}, match_f interface{}) bool {
+	var err error
+	var result bool
+	func(err *error) {
+		defer catch(err, false)
+		match_func := reflect.ValueOf(match_f)
+		rt := reflect.TypeOf(slices)
+		rv := reflect.ValueOf(slices)
+		if rt.Kind() == reflect.Slice {
+			for i := 0; i < rv.Len(); i++ {
+				indexv := rv.Index(i)
+				if match_func.Call([]reflect.Value{indexv})[0].Bool() {
+					result = true
+					return
+				}
+			}
+		}
+	}(&err)
+	if err != nil {
+		return false
+	}
+	return result
+}
+
 // 结构体切片中是否包含指定值
 func HasFieldValueInStructSlice(slices interface{}, field string, match interface{}) bool {
 	rt := reflect.TypeOf(slices)
