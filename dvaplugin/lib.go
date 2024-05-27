@@ -146,6 +146,7 @@ func VSetV(parent gjson.Result, sub interface{}, path string) gjson.Result {
 
 }
 
+// 解析gorm字段
 func SerializeGormTagToJSON(i interface{}) (string, error) {
 	objValue := reflect.ValueOf(i)
 	objType := objValue.Type()
@@ -155,25 +156,24 @@ func SerializeGormTagToJSON(i interface{}) (string, error) {
 		fieldValue := objValue.Field(j)
 		fieldType := objType.Field(j)
 
-		fieldTypeName := reflect.TypeOf(fieldValue.Interface()).String()
+		var fieldTypeName string
+		if fieldValue.Kind() == reflect.Interface {
+			fieldTypeName = "interface {}"
+		} else {
+			fieldTypeName = reflect.TypeOf(fieldValue.Interface()).String()
+		}
 
 		tag_value := fieldType.Tag.Get("gorm")
-		// fmt.Println(tag_value)
 		gormtags := strings.Split(tag_value, ";")
 
-		// var isset bool
 		for _, v := range gormtags {
 			if strings.HasPrefix(v, "column:") {
 				fieldname := strings.Split(v, "column:")[1]
 				jsonObj[fieldname] = fieldTypeName
-				// isset = true
 				break
 			}
 		}
 
-		// if !isset {
-		// 	jsonObj[fieldType.Name] = fieldTypeName
-		// }
 	}
 
 	jsonBytes, err := json.Marshal(jsonObj)
