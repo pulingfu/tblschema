@@ -1286,7 +1286,7 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 				panic("配置文件不正确")
 			}
 			for _, v := range value.Get("columns").Array() {
-				if !tbJson.Get("fields." + v.String()).Exists() {
+				if !tbJson.Get("fields."+v.String()).Exists() || !tbJson.Get("id."+v.String()).Exists() {
 					fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 					fmt.Printf("\x1b[%dm indexes columns:'%s' is not find\x1b[0m\n", 31, v.String())
 					panic("配置文件不正确")
@@ -1301,7 +1301,7 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 				panic("配置文件不正确")
 			}
 			for _, v := range value.Get("columns").Array() {
-				if !tbJson.Get("fields." + v.String()).Exists() {
+				if !tbJson.Get("fields."+v.String()).Exists() || !tbJson.Get("id."+v.String()).Exists() {
 					fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 					fmt.Printf("\x1b[%dm indexes columns:'%s' is not find\x1b[0m\n", 31, v.String())
 					panic("配置文件不正确")
@@ -1316,7 +1316,7 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 				panic("配置文件不正确")
 			}
 			for _, v := range value.Get("columns").Array() {
-				if !tbJson.Get("fields." + v.String()).Exists() {
+				if !tbJson.Get("fields."+v.String()).Exists() || !tbJson.Get("id."+v.String()).Exists() {
 					fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 					fmt.Printf("\x1b[%dm indexes columns:'%s' is not find\x1b[0m\n", 31, v.String())
 					panic("配置文件不正确")
