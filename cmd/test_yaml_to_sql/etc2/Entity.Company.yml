@@ -1,11 +1,12 @@
 Table:
   type: entity
-  table: company_test
+  table: company_test  # 表名
+  sharding_tables: company_test_01,company_test_02  # 分表指定表明，如果指定此字段则会按照schema创建分表
   options:
     charset: utf8
     collate: utf8_general_ci
-    comment: 公司表
-  indexes:
+    comment: 测试公司表
+  indexes:  ## 索引
     idx_name:
       columns:
         - name
@@ -15,40 +16,32 @@ Table:
     idx_created_at:
       columns:
         - created_at
-    idx_updated_at:
-      columns:
-        - updated_at
-    idx_deleted_at:
-      columns:
-        - deleted_at
     idx_search_helper:
       columns:
         - search_helper
-    idx_first_letter:
-      columns:
-        - first_letter
-  unique_indexes:
+  unique_indexes:  ## 唯一索引
       uniq_uuid:
           columns: 
             - uuid 
             - uuid2
-  fulltext_indexes:
+  fulltext_indexes:  ## 全文索引
       fulltext_intro:
-          with_parser: simple ## 
+          with_parser: simple ## 分词器
           columns: 
             - intro 
-            # - uuid2
-  id:
-    id:
+            - uuid2
+  id:  ## 主键 至少要有一个字段
+    id:  #第一个主键字段
       type: integer unsigned
       nullable: false
       generator: AUTO_INCREMENT
-
-  fields:
-    uuid:
-      type: varchar
+    uuid:  #第二个主键字段
+      type: integer unsigned
       nullable: false
-      comment:  用户 uuid
+    primary_key2:  #第三个主键字段
+      type: integer unsigned
+      nullable: false
+  fields:  ## 字段
     uuid2:
       type: varchar
       nullable: false
@@ -57,92 +50,22 @@ Table:
       type: varchar
       nullable: false
       comment:  公司名称
-    business_name:
-      type: varchar
-      nullable: false
-      comment:  工商全称
-    logo:
-      type: varchar
-      nullable: false
-      comment:  logo
     creator_uuid:
       type: varchar
       nullable: false
       comment:  创建者
-    scope:
-      type: varchar
+    cnt_project:
+      type: integer
       nullable: false
-      comment: 行业
-    latest_financing_stage:
-      type: varchar
-      nullable: false
-      comment: 最新融资阶段 
-    city:
-      type: varchar
-      nullable: false
-      comment: 城市
-    founder:
-      type: varchar
-      nullable: false
-      comment: 创始人
-    other_tags:
-      type: text
-      nullable: false
-      comment: 其他标签 ｜ 热点标签
-    business_intro:
-      type: varchar
-      nullable: false
-      comment:  业务介绍
+      comment:  项目数量
     search_helper:
       type: varchar
       nullable: false
       comment: search_helper
-    first_letter:
-      type: varchar
-      nullable: false
-      comment: first_letter
-    province:
-      type: varchar
-      nullable: false
-      comment: 省
-    address:
-      type: varchar
-      nullable: false
-      comment: 经营地址
     intro:
       type: text
       nullable: false
       comment: 简介
-    group_intro:
-      type: text
-      nullable: false
-      comment: 团队简介
-    core_highlight:
-      type: text
-      nullable: false
-      comment: 核心亮点
-    recommendation:
-      type: text
-      nullable: false
-      comment: 推荐信
-    other_intro:
-      type: text
-      nullable: false
-      comment: 其他介绍
-    change_date:
-      type: datetime
-      nullable: true
-      comment: 变更日期
-    established_at:
-      type: datetime
-      nullable: true
-      comment: 成立日期
     created_at:
       type: datetime
       nullable: false
-    updated_at:
-      type: datetime
-      nullable: true
-    deleted_at:
-      type: datetime
-      nullable: true
