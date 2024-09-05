@@ -15,6 +15,7 @@ import (
 
 	"github.com/pulingfu/tblschema/information_schema"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 type YamlToSqlHandler struct {
@@ -119,6 +120,19 @@ func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 			fmt.Printf("\x1b[%dm配置文件: %s 序列化失败，重复定义的表 \x1b[0m\n", 31, v)
 			panic(fmt.Sprintf("\x1b[%dm配置文件: %s 序列化失败\x1b[0m\n", 31, v))
 		}
+
+		sharding_tables := gjson.Parse(tvalue).Get("Table.sharding_tables").String()
+		if sharding_tables != "" {
+			for _, sharding_name := range strings.Split(sharding_tables, ",") {
+				if sharding_name == "" {
+					continue
+				}
+				sharding_tblv, _ := sjson.Set(tvalue, "Table.table", sharding_name)
+				ts.tables = append(ts.tables, sharding_tblv)
+			}
+		} else {
+			ts.tables = append(ts.tables, tvalue)
+		}
 		buildmapping[tname] = table
 		// t, err := json.Marshal(&table)
 		// fmt.Println("json:", string(jb))
@@ -127,7 +141,6 @@ func (ts *YamlToSqlHandler) getYamlDatas() *YamlToSqlHandler {
 			panic(fmt.Sprintf("\x1b[%dm配置文件: %s 序列化失败\x1b[0m\n", 31, v))
 		}
 
-		ts.tables = append(ts.tables, tvalue)
 	}
 
 	if ts.IsOutputBuildSchema {
@@ -184,7 +197,19 @@ func (ts *YamlToSqlHandler) loadFromBuildSchema() *YamlToSqlHandler {
 		}
 	}
 	gjson.Parse(bvaluestr).ForEach(func(key, value gjson.Result) bool {
-		ts.tables = append(ts.tables, value.String())
+		sharding_tables := value.Get("Table.sharding_tables").String()
+		_value := value.String()
+		if sharding_tables != "" {
+			for _, sharding_name := range strings.Split(sharding_tables, ",") {
+				if sharding_name == "" {
+					continue
+				}
+				sharding_tblv, _ := sjson.Set(_value, "Table.table", sharding_name)
+				ts.tables = append(ts.tables, sharding_tblv)
+			}
+		} else {
+			ts.tables = append(ts.tables, value.String())
+		}
 		return true
 	})
 
@@ -287,7 +312,7 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 					columns,
 					key.String(),
 					columnType,
-					value.Get("generator"),
+					value.Get("generator").String(),
 				)
 				primary_key = fmt.Sprintf("%s %s ,", primary_key, key.String())
 			} else {
@@ -1244,7 +1269,7 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 	for k, table := range ts.tables {
 		tbJson := gjson.Get(table, "Table")
 		// fieldsMap := map[string]string{}
-		if !tbJson.Get("id").Exists() || !tbJson.Get("id.id").Exists() {
+		if !tbJson.Get("id").Exists() {
 			fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 			fmt.Printf("\x1b[%dm 缺少主键id \x1b[0m\n", 31)
 			panic("配置文件不正确")
