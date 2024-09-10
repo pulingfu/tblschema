@@ -521,9 +521,9 @@ func (ts *YamlToSqlHandler) doSqlSafe() *YamlToSqlHandler {
 		if vv == "" {
 			continue
 		}
-		fmt.Println(">>>>>>>>>>>>>", ts.yamlFileFullPaths[k], ">>>>>>>>>>>>>")
+		fmt.Println(">>>>>>>>>>>>>", gjson.Parse(ts.tables[k]).Get("Table.table").String(), ">>>>>>>>>>>>>")
 		fmt.Printf("\x1b[%dm%s \x1b[0m\n", 33, v)
-		fmt.Println("<<<<<<<<<<<<<", ts.yamlFileFullPaths[k], "<<<<<<<<<<<<<")
+		fmt.Println("<<<<<<<<<<<<<", gjson.Parse(ts.tables[k]).Get("Table.table").String(), "<<<<<<<<<<<<<")
 	}
 	fmt.Printf("\x1b[%dm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>： \x1b[0m\n", 34)
 	fmt.Printf("\x1b[%dm确认执行请输入[ Y ]： \x1b[0m\n", 34)
@@ -907,19 +907,14 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 				// fmt.Println("<<<<<===")
 			}
 
+		} else if tbl.Get("id." + key.String()).Exists() {
+			//主键区，暂时用不上
 		} else {
 			dropColumnsSql = fmt.Sprintf("%sALTER  TABLE %s DROP %s;\n",
 				dropColumnsSql,
 				tname,
 				key.String(),
 			)
-			// dropCloumns[key.String()] = true
-			// fmt.Println(">>>>>>删除行==")
-			// fmt.Println("库= ", key.String())
-			// fmt.Println("yml= ", tbl.Get("fields."+key.String()).String())
-			// fmt.Println("sql= ", value.String())
-			// // fmt.Println("原因：", yy)
-			// fmt.Println("<<<<<===")
 		}
 
 		return true
