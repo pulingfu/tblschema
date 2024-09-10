@@ -664,9 +664,9 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	var sqlColumnsSerialize = information_schema.SqlColumnsSerialize{}
 	// sqlColumnsSerialize = map[string]map[string]string{}
 	for _, sc := range sqlColumns {
-		if strings.ToLower(sc.ColumnName) == "id" {
-			continue
-		}
+		// if strings.ToLower(sc.ColumnName) == "id" {
+		// 	continue
+		// }
 		if sqlColumnsSerialize[sc.ColumnName] == nil {
 			sqlColumnsSerialize[sc.ColumnName] = map[string]string{}
 		}
