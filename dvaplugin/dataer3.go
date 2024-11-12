@@ -118,9 +118,17 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 
 				if s.Smf != nil {
 
-					_meta, _match_v := s.Smf(gjson.Parse(s.Meta), match_v)
-					s.Meta = _meta.String()
+					_iv, _match_v := s.Smf(iv, match_v)
 					match_v = _match_v
+
+					// 先把对应的 数组的元素父值替换掉
+					_iv_key := fmt.Sprintf("%s.%d", this_key, k)
+					if this_key == "" {
+						_iv_key = fmt.Sprintf("%d", k)
+					}
+					s.Meta, _ = sjson.Set(s.Meta, _iv_key, _iv.Value())
+
+					// s.Meta = _meta.String()
 				}
 
 				// fmt.Println(w_key)
@@ -152,8 +160,17 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 			})
 
 			if s.Smf != nil {
-				_meta, _match_v := s.Smf(gjson.Parse(s.Meta), match_v)
-				s.Meta = _meta.String()
+				// _meta, _match_v := s.Smf(gjson.Parse(s.Meta), match_v)
+				_iv, _match_v := s.Smf(iv, match_v)
+
+				// 先把对应的 数组的元素父值替换掉
+				if this_key == "" {
+					s.Meta = _iv.String()
+				} else {
+					_iv_key := this_key
+					s.Meta, _ = sjson.Set(s.Meta, _iv_key, _iv.Value())
+				}
+				// s.Meta = _meta.String()
 				match_v = _match_v
 			}
 
@@ -197,8 +214,14 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 				for _, sv := range s.SubGroup.Array() {
 					if s.CF(iv, sv) {
 						if s.Smf != nil {
-							_meta, _sv := s.Smf(gjson.Parse(s.Meta), sv)
-							s.Meta = _meta.String()
+							_iv, _sv := s.Smf(iv, sv)
+							_iv_key := fmt.Sprintf("%s.%d", this_key, k)
+							if this_key == "" {
+								_iv_key = fmt.Sprintf("%d", k)
+							}
+
+							s.Meta, _ = sjson.Set(s.Meta, _iv_key, _iv.Value())
+
 							filter = append(filter, _sv.Value())
 						} else {
 							filter = append(filter, sv.Value())
@@ -229,8 +252,18 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 			for _, sv := range s.SubGroup.Array() {
 				if s.CF(iv, sv) {
 					if s.Smf != nil {
-						_meta, _sv := s.Smf(gjson.Parse(s.Meta), sv)
-						s.Meta = _meta.String()
+						// _meta, _sv := s.Smf(gjson.Parse(s.Meta), sv)
+						_iv, _sv := s.Smf(iv, sv)
+
+						// 先把对应的 数组的元素父值替换掉
+						if this_key == "" {
+							s.Meta = _iv.String()
+						} else {
+							_iv_key := this_key
+							s.Meta, _ = sjson.Set(s.Meta, _iv_key, _iv.Value())
+						}
+
+						// s.Meta = _meta.String()
 						filter = append(filter, _sv.Value())
 					} else {
 						filter = append(filter, sv.Value())
