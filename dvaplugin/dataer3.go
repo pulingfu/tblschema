@@ -117,7 +117,10 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 				})
 
 				if s.Smf != nil {
-					meta, match_v = s.Smf(meta, match_v)
+
+					_meta, _match_v := s.Smf(gjson.Parse(s.Meta), match_v)
+					s.Meta = _meta.String()
+					match_v = _match_v
 				}
 
 				// fmt.Println(w_key)
@@ -149,7 +152,9 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 			})
 
 			if s.Smf != nil {
-				iv, match_v = s.Smf(iv, match_v)
+				_meta, _match_v := s.Smf(gjson.Parse(s.Meta), match_v)
+				s.Meta = _meta.String()
+				match_v = _match_v
 			}
 
 			// fmt.Println(w_key)
@@ -188,26 +193,12 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 			} else {
 				// meta := iv
 				// //最后一个，直接比较
-				// var match_v gjson.Result
-				// SliceFind(s.SubGroup.Array(), &match_v, func(sv gjson.Result) bool {
-				// 	return s.CF(meta, sv)
-				// })
-
-				// if s.Smf != nil {
-				// 	meta, match_v = s.Smf(meta, match_v)
-				// }
-
-				// s.Meta = VSSetV(s.Meta, match_v.Value(), w_key)
-				// fmt.Println(match_v.String())
-
-				// fmt.Println(w_key)
-				// fmt.Println(match_v.String())
 				var filter = make([]interface{}, 0)
 				for _, sv := range s.SubGroup.Array() {
 					if s.CF(iv, sv) {
 						if s.Smf != nil {
-							_iv, _sv := s.Smf(iv, sv)
-							iv = _iv
+							_meta, _sv := s.Smf(gjson.Parse(s.Meta), sv)
+							s.Meta = _meta.String()
 							filter = append(filter, _sv.Value())
 						} else {
 							filter = append(filter, sv.Value())
@@ -216,9 +207,6 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 				}
 
 				s.Meta, _ = sjson.Set(s.Meta, w_key, filter)
-
-				// result = append(result, VSetV(iv, JArrToInterface(filter), relation).Value())
-
 			}
 
 		}
@@ -237,25 +225,12 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 		} else {
 
 			//最后一个，直接比较
-			// var match_v gjson.Result
-			// SliceFind(s.SubGroup.Array(), &match_v, func(sv gjson.Result) bool {
-			// 	return s.CF(iv, sv)
-			// })
-
-			// if s.Smf != nil {
-			// 	iv, match_v = s.Smf(iv, match_v)
-			// }
-
-			// fmt.Println(w_key)
-			// fmt.Println(match_v.String())
-			// s.Meta = VSSetV(s.Meta, match_v.Value(), w_key)
-
 			var filter = make([]interface{}, 0)
 			for _, sv := range s.SubGroup.Array() {
 				if s.CF(iv, sv) {
 					if s.Smf != nil {
-						_iv, _sv := s.Smf(iv, sv)
-						iv = _iv
+						_meta, _sv := s.Smf(gjson.Parse(s.Meta), sv)
+						s.Meta = _meta.String()
 						filter = append(filter, _sv.Value())
 					} else {
 						filter = append(filter, sv.Value())
