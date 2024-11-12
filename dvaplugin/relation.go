@@ -115,10 +115,11 @@ func (r *RelationLoader) load(db *gorm.DB) {
 	r.result = r.input
 	//取key
 	var fakeys = map[string][]string{}
-	// var keysunq = map[string]map[string]bool{}
 	for rk, rv := range r.Stash {
 
-		_dataer := &Dataer{}
+		_dataer := &Dataer{
+			Keysunq: map[string]bool{},
+		}
 		dig_rks := strings.Split(rk, "|")
 		dig_key := rv.fakey
 		if len(dig_rks) > 1 {
@@ -128,30 +129,6 @@ func (r *RelationLoader) load(db *gorm.DB) {
 		}
 		_dataer.GetKeys(input_v, dig_key)
 		fakeys[rk] = _dataer.Keys
-
-		// for _, inv := range input_v.Array() {
-		// 	value := inv.Get(rv.fakey)
-		// 	if value.Value() == nil {
-		// 		continue
-		// 	}
-		// 	val := value.String()
-		// 	// 初始化
-		// 	if _, ok := fakeys[rk]; !ok {
-		// 		fakeys[rk] = []string{}
-		// 	}
-
-		// 	// 过滤掉空 的键值
-		// 	if val == "" {
-		// 		continue
-		// 	}
-		// 	if _, ok := keysunq[rk]; !ok {
-		// 		keysunq[rk] = map[string]bool{}
-		// 	}
-		// 	if _, ok := keysunq[rk][val]; !ok {
-		// 		keysunq[rk][val] = true
-		// 		fakeys[rk] = append(fakeys[rk], val)
-		// 	}
-		// }
 	}
 	//加载子项
 	// var subcollect = map[string]interface{}{}
@@ -211,16 +188,6 @@ func (r *RelationLoader) load(db *gorm.DB) {
 			r.result = BelongTo(r.result, rv.result, rk)
 		default:
 		}
-
-		// switch rv.relation_type {
-		// case HAS_ONE:
-		// 	r.result, _ = HasOneV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
-		// case HAS_MANY:
-		// 	r.result, _ = HasManyV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
-		// case BELONG_TO:
-		// 	r.result = BelongTo(r.result, rv.result, rk)
-		// default:
-		// }
 	}
 
 }
