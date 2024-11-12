@@ -146,6 +146,14 @@ func VSetV(parent gjson.Result, sub interface{}, path string) gjson.Result {
 
 }
 
+func VSSetV(parent string, sub interface{}, path string) string {
+
+	value, _ := sjson.Set(parent, path, sub)
+
+	return value
+
+}
+
 // 解析gorm字段
 func SerializeGormTagToJSON(i interface{}) (string, error) {
 	objValue := reflect.ValueOf(i)

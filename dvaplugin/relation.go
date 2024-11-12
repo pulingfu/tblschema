@@ -115,29 +115,43 @@ func (r *RelationLoader) load(db *gorm.DB) {
 	r.result = r.input
 	//取key
 	var fakeys = map[string][]string{}
-	var keysunq = map[string]map[string]bool{}
+	// var keysunq = map[string]map[string]bool{}
 	for rk, rv := range r.Stash {
-		for _, inv := range input_v.Array() {
-			value := inv.Get(rv.fakey)
-			if value.Value() == nil {
-				continue
-			}
-			val := value.String()
-			// 初始化
-			if _, ok := fakeys[rk]; !ok {
-				fakeys[rk] = []string{}
-			}
-			if val == "" {
-				continue
-			}
-			if _, ok := keysunq[rk]; !ok {
-				keysunq[rk] = map[string]bool{}
-			}
-			if _, ok := keysunq[rk][val]; !ok {
-				keysunq[rk][val] = true
-				fakeys[rk] = append(fakeys[rk], val)
-			}
+
+		_dataer := &Dataer{}
+		dig_rks := strings.Split(rk, "|")
+		dig_key := rv.fakey
+		if len(dig_rks) > 1 {
+			dig_key = fmt.Sprintf("%s|%s",
+				strings.Join(dig_rks[:len(dig_rks)-1], "|"),
+				dig_key)
 		}
+		_dataer.GetKeys(input_v, dig_key)
+		fakeys[rk] = _dataer.Keys
+
+		// for _, inv := range input_v.Array() {
+		// 	value := inv.Get(rv.fakey)
+		// 	if value.Value() == nil {
+		// 		continue
+		// 	}
+		// 	val := value.String()
+		// 	// 初始化
+		// 	if _, ok := fakeys[rk]; !ok {
+		// 		fakeys[rk] = []string{}
+		// 	}
+
+		// 	// 过滤掉空 的键值
+		// 	if val == "" {
+		// 		continue
+		// 	}
+		// 	if _, ok := keysunq[rk]; !ok {
+		// 		keysunq[rk] = map[string]bool{}
+		// 	}
+		// 	if _, ok := keysunq[rk][val]; !ok {
+		// 		keysunq[rk][val] = true
+		// 		fakeys[rk] = append(fakeys[rk], val)
+		// 	}
+		// }
 	}
 	//加载子项
 	// var subcollect = map[string]interface{}{}
@@ -181,15 +195,32 @@ func (r *RelationLoader) load(db *gorm.DB) {
 				return p.Get(rv.fakey).String() != "" && p.Get(rv.fakey).String() == s.Get(rv.sukey).String()
 			}
 		}
+
+		r_rv := VtoJson(r.result)   //父集
+		rv_rv := VtoJson(rv.result) //子集
+		dataer := NewDataer(r_rv.String(), rv.compareFunc, rv.subModifyFunc, rv_rv)
+
 		switch rv.relation_type {
 		case HAS_ONE:
-			r.result, _ = HasOneV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
+			r.result = dataer.HasOne(r_rv, "", rk).GetResult()
+			// r.result, _ = HasOneV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
 		case HAS_MANY:
-			r.result, _ = HasManyV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
+			r.result = dataer.HasMany(r_rv, "", rk).GetResult()
+			// r.result, _ = HasManyV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
 		case BELONG_TO:
 			r.result = BelongTo(r.result, rv.result, rk)
 		default:
 		}
+
+		// switch rv.relation_type {
+		// case HAS_ONE:
+		// 	r.result, _ = HasOneV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
+		// case HAS_MANY:
+		// 	r.result, _ = HasManyV2(r.result, rv.result, rk, rv.compareFunc, rv.subModifyFunc)
+		// case BELONG_TO:
+		// 	r.result = BelongTo(r.result, rv.result, rk)
+		// default:
+		// }
 	}
 
 }
