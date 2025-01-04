@@ -208,3 +208,19 @@ bool型
 
 yml配置文件格式参考test里面的yml文件哦
 
+
+#### dataer用法
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/pulingfu/tblschema/dvaplugin"
+)
+
+func main() {
+	dataer := dvaplugin.NewDataer()
+	// Do something
+}
+```
