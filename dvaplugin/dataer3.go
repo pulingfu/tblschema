@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+// Dataer 数据连和处理者
 type Dataer struct {
 	CF       CompareFun
 	Smf      SubModifyFunc
