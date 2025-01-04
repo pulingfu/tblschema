@@ -19,30 +19,31 @@ type Dataer struct {
 	Keysunq map[string]bool //去重
 }
 
-// 设置要操作的原始数据即父数据 (json 字符串)
+// SetMeta 设置要操作的原始数据即父数据 (json 字符串)
 func (d *Dataer) SetMeta(meta string) *Dataer {
 	d.Meta = meta
 	return d
 }
 
-// 设置比较函数 用于连接父数据和子数据的关键判断
+// SetCompareFunc 设置比较函数 用于连接父数据和子数据的关键判断
 func (d *Dataer) SetCompareFunc(cf CompareFun) *Dataer {
 	d.CF = cf
 	return d
 }
 
-// 设置子数据修改函数 可选，可以用于在连接时根据条件修改 子数据和父数据
+// SetSubModifyFunc 设置子数据修改函数 可选，可以用于在连接时根据条件修改 子数据和父数据
 func (d *Dataer) SetSubModifyFunc(smf SubModifyFunc) *Dataer {
 	d.Smf = smf
 	return d
 }
 
-// 设置子数据
+// SetSubGroup 设置子数据
 func (d *Dataer) SetSubGroup(subGroup gjson.Result) *Dataer {
 	d.SubGroup = subGroup
 	return d
 }
 
+// NewDataer 创建一个新的Dataer
 func NewDataer() *Dataer {
 	return &Dataer{
 
@@ -50,18 +51,15 @@ func NewDataer() *Dataer {
 		Keysunq: map[string]bool{},
 	}
 }
+
+// GetResult 获取最终结果
 func (d *Dataer) GetResult() interface{} {
 	return gjson.Parse(d.Meta).Value()
 }
 
-/*
-// 原始数据
-input gjson.Result
-
-// 要获取的key的深度参数
-// 比如  body|bar 代表获取 input的body下的bar 的值列表
-dig_key string
-*/
+// GetKeys 获取原属数据中 指定深度的key值，最终会得到一个数组
+// - input gjson.Result 原始数据
+// - dig_key string  要获取的key的深度参数 比如  body|bar 代表获取 input的body下的bar 的值列表
 func (d *Dataer) GetKeys(input gjson.Result, dig_key string) *Dataer {
 
 	relations := strings.Split(dig_key, "|")
@@ -108,6 +106,7 @@ func (d *Dataer) GetKeys(input gjson.Result, dig_key string) *Dataer {
 	return d
 }
 
+// HasOne 将subdata arry 中符合条件的单个元素，加入到parent 指定位置中
 func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 
 	relations := strings.Split(relation, "|")
@@ -207,6 +206,7 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 
 }
 
+// HasMany 将subdata arry 中符合条件的多个元素，加入到parent 指定位置中
 func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer {
 
 	relations := strings.Split(relation, "|")
