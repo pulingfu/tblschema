@@ -175,7 +175,12 @@ func (r *RelationLoader) load(db *gorm.DB) {
 
 		r_rv := VtoJson(r.result)   //父集
 		rv_rv := VtoJson(rv.result) //子集
-		dataer := NewDataer(r_rv.String(), rv.compareFunc, rv.subModifyFunc, rv_rv)
+		// dataer := NewDataer(r_rv.String(), rv.compareFunc, rv.subModifyFunc, rv_rv)
+		dataer := NewDataer().
+			SetMeta(r_rv.String()).
+			SetCompareFunc(rv.compareFunc).
+			SetSubModifyFunc(rv.subModifyFunc).
+			SetSubGroup(rv_rv)
 
 		switch rv.relation_type {
 		case HAS_ONE:

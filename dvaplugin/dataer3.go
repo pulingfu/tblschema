@@ -19,12 +19,32 @@ type Dataer struct {
 	Keysunq map[string]bool //去重
 }
 
-func NewDataer(meta string, cf CompareFun, smf SubModifyFunc, subGroup gjson.Result) *Dataer {
+// 设置要操作的原始数据即父数据 (json 字符串)
+func (d *Dataer) SetMeta(meta string) *Dataer {
+	d.Meta = meta
+	return d
+}
+
+// 设置比较函数 用于连接父数据和子数据的关键判断
+func (d *Dataer) SetCompareFunc(cf CompareFun) *Dataer {
+	d.CF = cf
+	return d
+}
+
+// 设置子数据修改函数 可选，可以用于在连接时根据条件修改 子数据和父数据
+func (d *Dataer) SetSubModifyFunc(smf SubModifyFunc) *Dataer {
+	d.Smf = smf
+	return d
+}
+
+// 设置子数据
+func (d *Dataer) SetSubGroup(subGroup gjson.Result) *Dataer {
+	d.SubGroup = subGroup
+	return d
+}
+
+func NewDataer() *Dataer {
 	return &Dataer{
-		Meta:     meta,
-		CF:       cf,
-		Smf:      smf,
-		SubGroup: subGroup,
 
 		Keys:    []string{},
 		Keysunq: map[string]bool{},
@@ -35,7 +55,9 @@ func (d *Dataer) GetResult() interface{} {
 }
 
 /*
-input gjson.Result 原始数据
+// 原始数据
+input gjson.Result
+
 // 要获取的key的深度参数
 // 比如  body|bar 代表获取 input的body下的bar 的值列表
 dig_key string
