@@ -107,6 +107,7 @@ func makeSlice(valueType reflect.Type, args ...int) reflect.Value {
 	return reflect.MakeSlice(valueType, sliceLen, sliceCap)
 }
 
+// VtoJsonString 将值转换为json
 func VtoJsonString(value interface{}) string {
 	jb, err := json.Marshal(&value)
 	if err != nil {
@@ -115,6 +116,7 @@ func VtoJsonString(value interface{}) string {
 	return string(jb)
 }
 
+// VtoJson 将值转换为json
 func VtoJson(value interface{}) gjson.Result {
 	jb, err := json.Marshal(&value)
 	if err != nil {
