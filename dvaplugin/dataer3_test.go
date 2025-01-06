@@ -116,10 +116,6 @@ func TestGetKeys(t *testing.T) {
 	dataer := NewDataer()
 	dataer.GetKeys(gjson.Parse(test_json_parent), "body2|bid")
 	t.Logf("\nkeys:=%v", dataer.Keys)
-	// dataer := NewDataer(test_json, func(p, s gjson.Result) bool {
-	// 	// fmt.Println(p.Get("bid").Int(), "    ===   ", s.Get("bid").Int())
-	// 	return p.Get("bid").Int() == s.Get("bid").Int()
-	// }, nil, gjson.Parse(test_sub_json))
 }
 
 // 将subdata arry 中符合条件的单个元素，加入到parent 指定位置中
