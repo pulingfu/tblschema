@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//mysql数据类型<=>go数据类型
+// mysql数据类型<=>go数据类型
 var sqlTypeToGoType = map[string]string{
 	"int":                "int",
 	"integer":            "int",
@@ -159,6 +159,7 @@ type tblStructColumnInfo struct {
 	MaxLenFieldName int
 }
 
+// NewTblToStructHandler 新建表结构生成器
 func NewTblToStructHandler() *TblToStructHandler {
 	return &TblToStructHandler{
 		nullableValuePoint: true,
@@ -184,40 +185,49 @@ func NewTblToStructHandler() *TblToStructHandler {
 	}
 }
 
+// SetDsn 设置数据库连接
 func (ts *TblToStructHandler) SetDsn(dsn string) *TblToStructHandler {
 	ts.dsn = dsn
 	return ts
 }
+
+// SetDB 设置数据库连接
 func (ts *TblToStructHandler) SetDB(db *gorm.DB) *TblToStructHandler {
 	ts.db = db
 	return ts
 }
+
+// SetSavePath 设置生成model文件的保存路径
 func (ts *TblToStructHandler) SetSavePath(savePath string) *TblToStructHandler {
 	ts.savePath = savePath
 	return ts
 }
+
+// SetTableName 设置要生成model的数据库表
 func (ts *TblToStructHandler) SetTableName(tableName string) *TblToStructHandler {
 	ts.tableName = tableName
 	return ts
 }
+
+// SetIsNullableValuePoint 设置可空字段是否设置为指针
 func (ts *TblToStructHandler) SetIsNullableValuePoint(nullableValuePoint bool) *TblToStructHandler {
 	ts.nullableValuePoint = nullableValuePoint
 	return ts
 }
 
-//设置所生成对应的orm 标记类型  默认为 `gorm:"column:xxx"`
+// SetStructOrmTag 设置所生成对应的orm 标记类型  默认为 `gorm:"column:xxx"`
 func (ts *TblToStructHandler) SetStructOrmTag(modelOrmTagType string) *TblToStructHandler {
 	ts.tblStructColumnInfo.ModelOrmTagType = modelOrmTagType
 	return ts
 }
 
-//添加其他的标签 如json ==> `json:"xxx"`
+// SetOtherTags 添加其他的标签 如json ==> `json:"xxx"`
 func (ts *TblToStructHandler) SetOtherTags(otherTag ...string) *TblToStructHandler {
 	ts.tblStructColumnInfo.OtherTag = otherTag
 	return ts
 }
 
-//设置行信息
+// SeTblStructColumnNameInfo 设置行信息
 func (ts *TblToStructHandler) SeTblStructColumnNameInfo(columnNameType, columnOrder, prefix, suffix string) *TblToStructHandler {
 	ts.tblStructColumnInfo.ColumnNameType = columnNameType
 	ts.tblStructColumnInfo.ColumnNameSuffix = suffix
@@ -226,7 +236,7 @@ func (ts *TblToStructHandler) SeTblStructColumnNameInfo(columnNameType, columnOr
 	return ts
 }
 
-//默认生成的结构体名类型为CamelCase写法，无前后后缀
+// SetTblStructNameInfo 默认生成的结构体名类型为CamelCase写法，无前后后缀
 func (ts *TblToStructHandler) SetTblStructNameInfo(structNameType, prifix, suffix string) *TblToStructHandler {
 	ts.tblStructNameInfo.TblStructNameType = structNameType
 	ts.tblStructNameInfo.TblStructPrefix = prifix
@@ -234,7 +244,7 @@ func (ts *TblToStructHandler) SetTblStructNameInfo(structNameType, prifix, suffi
 	return ts
 }
 
-//设置包信息
+// SetPackageInfo 设置生成的包名
 func (ts *TblToStructHandler) SetPackageInfo(packageName, prifix, suffix string) *TblToStructHandler {
 	ts.packageInfo.PackageName = packageName
 	ts.packageInfo.PackagePrefix = prifix
@@ -242,12 +252,13 @@ func (ts *TblToStructHandler) SetPackageInfo(packageName, prifix, suffix string)
 	return ts
 }
 
-//设置数据库中的时间类型对应 modelstruct中的什么 time.Time/string
+// SetTimeType 设置数据库中的时间类型对应 modelstruct中的什么 time.Time/string
 func (ts *TblToStructHandler) SetTimeType(timeType string) *TblToStructHandler {
 	ts.timeType = timeType
 	return ts
 }
 
+// GenerateTblStruct 根据数据库表生成对应结构体
 func (ts *TblToStructHandler) GenerateTblStruct() *TblToStructHandler {
 	ts.connectSql()
 	ts.getColumns()
@@ -468,6 +479,7 @@ func (ts *TblToStructHandler) connectSql() {
 
 }
 
+// GetAllTableNames 获取所有的表
 func (ts *TblToStructHandler) GetAllTableNames() []string {
 	ts.connectSql()
 	var allTname []string
@@ -478,6 +490,7 @@ func (ts *TblToStructHandler) GetAllTableNames() []string {
 	return allTname
 }
 
+// GenerateAllTblStruct 一键生成所有指定数据库的表对应的结构体
 func (ts *TblToStructHandler) GenerateAllTblStruct() {
 	ts.connectSql()
 	allTname := ts.GetAllTableNames()

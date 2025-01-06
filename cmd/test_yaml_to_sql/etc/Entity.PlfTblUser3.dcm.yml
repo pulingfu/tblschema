@@ -4,7 +4,7 @@ Table:
     options:
         charset: utf8mb4
         collate: utf8mb4_general_ci
-        comment: 用户表注释cs
+        comment: 用户表注释
     id:
         id:
             type: integer unsigned

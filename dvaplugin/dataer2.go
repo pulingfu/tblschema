@@ -6,6 +6,7 @@ import (
 
 type SubModifyFunc func(p, s gjson.Result) (gjson.Result, gjson.Result)
 
+// HasManyV2 准备废弃，请使用替代方法 NewDataer().HasMany
 func HasManyV2(input interface{}, subGroup interface{}, relation string, f CompareFun, smf SubModifyFunc) (interface{}, error) {
 
 	input_v := VtoJson(input)
@@ -70,6 +71,7 @@ func HasManyV2(input interface{}, subGroup interface{}, relation string, f Compa
 
 }
 
+// HasOneV2 准备废弃，请使用替代方法 NewDataer().HasOne
 func HasOneV2(input interface{}, subGroup interface{}, relation string, f CompareFun, smf SubModifyFunc) (interface{}, error) {
 	input_v := VtoJson(input)
 	sub_g_v := VtoJson(subGroup)

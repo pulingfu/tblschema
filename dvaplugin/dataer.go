@@ -9,6 +9,7 @@ import (
 
 type CompareFun func(p, s gjson.Result) bool
 
+// HasMany 准备废弃，请使用替代方法 NewDataer().HasMany
 func HasMany(input interface{}, subGroup interface{}, relation string, f CompareFun) (interface{}, error) {
 
 	input_v := VtoJson(input)
@@ -48,6 +49,7 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 
 }
 
+// HasOne 准备废弃，请使用替代方法 NewDataer().HasOne
 func HasOne(input interface{}, subGroup interface{}, relation string, f CompareFun) (interface{}, error) {
 	input_v := VtoJson(input)
 	sub_g_v := VtoJson(subGroup)
@@ -103,7 +105,7 @@ func BelongTo(input interface{}, subgroup interface{}, relation string) interfac
 	return jv.Value()
 }
 
-// 解析 reqdata参数有效的值解析到model中，返回用于更新数据库的mapping
+// GetUpdateMapping  根据model的有效数据库字段解析reqdata参数，返回用于更新数据库的mapping
 func GetUpdateMapping(model interface{}, reqdata gjson.Result) (map[string]interface{}, error) {
 
 	useMapping, err := SerializeGormTagToJSON(model)
@@ -138,7 +140,7 @@ func GetUpdateMapping(model interface{}, reqdata gjson.Result) (map[string]inter
 	return mapping, nil
 }
 
-// 解析 reqdata参数有效的值解析到model中，返回用于更新数据库的mapping, 默认值初始化
+// GetCreateMapping 根据model的有效数据库字段解析reqdata参数，返回用于创建数据库的mapping, 默认值初始化
 func GetCreateMapping(model interface{}, reqdata gjson.Result) (map[string]interface{}, error) {
 
 	useMapping, err := SerializeGormTagToJSON(model)

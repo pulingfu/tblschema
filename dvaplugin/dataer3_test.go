@@ -2,7 +2,6 @@ package dvaplugin
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/tidwall/gjson"
 )
@@ -113,14 +112,14 @@ var test_json_sub = `
 
 `
 
-func TestGetKeys(t *testing.T) {
+func ExampleDataer_GetKeys() {
 	dataer := NewDataer()
 	dataer.GetKeys(gjson.Parse(test_json_parent), "body2|bid")
-	t.Logf("\nkeys:=%v", dataer.Keys)
+	fmt.Printf("\nkeys:=%v", dataer.Keys)
 }
 
 // 将subdata arry 中符合条件的单个元素，加入到parent 指定位置中
-func ExampleHasOne() {
+func ExampleDataer_HasOne() {
 
 	dataer := NewDataer().
 		SetMeta(test_json_parent).
@@ -135,7 +134,7 @@ func ExampleHasOne() {
 }
 
 // 将subdata arry 中符合条件的多个元素，加入到parent 指定位置中
-func TestHasMany(t *testing.T) {
+func ExampleDataer_HasMany() {
 
 	dataer := NewDataer().
 		SetMeta(test_json_parent).
@@ -146,5 +145,5 @@ func TestHasMany(t *testing.T) {
 
 	dataer.HasMany(gjson.Parse(test_json_parent), "", "body2|newbd")
 
-	t.Logf("\nresult:=%v", VtoJsonString(dataer.GetResult()))
+	fmt.Printf("\nresult:=%v", VtoJsonString(dataer.GetResult()))
 }

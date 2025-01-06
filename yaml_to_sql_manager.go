@@ -34,6 +34,7 @@ type YamlToSqlHandler struct {
 	sql []string
 }
 
+// NewYamlToSqlHandler 创建表结构维护器
 func NewYamlToSqlHandler() *YamlToSqlHandler {
 	return &YamlToSqlHandler{
 		IsOutputBuildSchema:      false,
@@ -42,10 +43,13 @@ func NewYamlToSqlHandler() *YamlToSqlHandler {
 	}
 }
 
+// SetDsn 设置数据库连接
 func (ts *YamlToSqlHandler) SetDsn(dsn string) *YamlToSqlHandler {
 	ts.dsn = dsn
 	return ts
 }
+
+// SetDB 设置数据库连接
 func (ts *YamlToSqlHandler) SetDB(db *gorm.DB) *YamlToSqlHandler {
 	ts.db = db
 	return ts
@@ -65,21 +69,26 @@ func (ts *YamlToSqlHandler) connectSql() {
 	}
 }
 
+// SetYamlPath 设置yaml配置文件路径
 func (ts *YamlToSqlHandler) SetYamlPath(yamlPath string) *YamlToSqlHandler {
 	ts.YamlPath = yamlPath
 	return ts
 }
 
+// SetIsOutputBuildSchema 设置是否输出编译后的结构 用于加密或者强制发布前检查
 func (ts *YamlToSqlHandler) SetIsOutputBuildSchema(value bool, encry bool, key string) *YamlToSqlHandler {
 	ts.IsOutputBuildSchema = value
 	ts.IsEncryOutputBuildSchema = encry
 	ts.EncryKey = key
 	return ts
 }
+
+// SetBuildSchemaDest 设置编译后的文件路径
 func (ts *YamlToSqlHandler) SetBuildSchemaDest(dest string) *YamlToSqlHandler {
 	ts.BuildSchemaDest = dest
 	return ts
 }
+
 func (ts *YamlToSqlHandler) getyamlFileFullPaths() *YamlToSqlHandler {
 
 	files, err := os.ReadDir(ts.YamlPath)
@@ -1324,6 +1333,7 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 	return ts
 }
 
+// ExecuteSchemaSafeCheck 执行根据配置文件同步表结构(安全操作，允许使用者进一步确认)
 func (ts *YamlToSqlHandler) ExecuteSchemaSafeCheck() *YamlToSqlHandler {
 	ts.connectSql()
 	ts.getyamlFileFullPaths().
@@ -1332,6 +1342,7 @@ func (ts *YamlToSqlHandler) ExecuteSchemaSafeCheck() *YamlToSqlHandler {
 	return ts
 }
 
+// ExecuteSchema 执行根据配置文件同步表结构
 func (ts *YamlToSqlHandler) ExecuteSchema() *YamlToSqlHandler {
 	ts.connectSql()
 	ts.getyamlFileFullPaths().
@@ -1340,6 +1351,7 @@ func (ts *YamlToSqlHandler) ExecuteSchema() *YamlToSqlHandler {
 	return ts
 }
 
+// LoadSchema 加载编译后的表结构配置信息
 func (ts *YamlToSqlHandler) LoadSchema() *YamlToSqlHandler {
 	ts.connectSql()
 	ts.loadFromBuildSchema().verifyYmlFile().doSchema()
@@ -1361,15 +1373,18 @@ func (ts *YamlToSqlHandler) trimSql() *YamlToSqlHandler {
 	return ts
 }
 
+// VerifyIsCleanSchema 检查是否有结构变动
 func (ts *YamlToSqlHandler) VerifyIsCleanSchema() bool {
 	ts.trimSql()
 	return len(ts.sql) < 1
 }
 
+// GetSql 获取需要执行的sql
 func (ts *YamlToSqlHandler) GetSql() []string {
 	return ts.sql
 }
 
+// DoSql 执行sql
 func (ts *YamlToSqlHandler) DoSql() *YamlToSqlHandler {
 	ts.doSqlSafe()
 	return ts
