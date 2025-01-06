@@ -1,9 +1,9 @@
-package dvaplugin
+package tblschema
 
 import (
 	"fmt"
-	"testing"
 
+	"github.com/pulingfu/tblschema/dvaplugin"
 	"github.com/tidwall/gjson"
 )
 
@@ -113,38 +113,8 @@ var test_json_sub = `
 
 `
 
-func TestGetKeys(t *testing.T) {
-	dataer := NewDataer()
+func ExampleGetKeys() {
+	dataer := dvaplugin.NewDataer()
 	dataer.GetKeys(gjson.Parse(test_json_parent), "body2|bid")
-	t.Logf("\nkeys:=%v", dataer.Keys)
-}
-
-// 将subdata arry 中符合条件的单个元素，加入到parent 指定位置中
-func ExampleHasOne() {
-
-	dataer := NewDataer().
-		SetMeta(test_json_parent).
-		SetCompareFunc(func(p, s gjson.Result) bool {
-			return p.Get("bid").Int() == s.Get("bid").Int()
-		}).
-		SetSubGroup(gjson.Parse(test_json_sub))
-
-	dataer.HasOne(gjson.Parse(test_json_parent), "", "body2|newbd")
-
-	fmt.Printf("\nresult:=%v", VtoJsonString(dataer.GetResult()))
-}
-
-// 将subdata arry 中符合条件的多个元素，加入到parent 指定位置中
-func TestHasMany(t *testing.T) {
-
-	dataer := NewDataer().
-		SetMeta(test_json_parent).
-		SetCompareFunc(func(p, s gjson.Result) bool {
-			return p.Get("bid").Int() == s.Get("bid").Int()
-		}).
-		SetSubGroup(gjson.Parse(test_json_sub))
-
-	dataer.HasMany(gjson.Parse(test_json_parent), "", "body2|newbd")
-
-	t.Logf("\nresult:=%v", VtoJsonString(dataer.GetResult()))
+	fmt.Printf("\nkeys:=%v", dataer.Keys)
 }
