@@ -113,6 +113,7 @@ var test_json_sub = `
 
 `
 
+// ExampleGetKeys demonstrates how to use the GetKeys method of the Dataer struct.
 func ExampleGetKeys() {
 	dataer := dvaplugin.NewDataer()
 	dataer.GetKeys(gjson.Parse(test_json_parent), "body2|bid")
