@@ -172,6 +172,7 @@ func (s *Dataer) HasOne(input gjson.Result, this_key, relation string) *Dataer {
 		iv := input
 		if len(relations) > 1 {
 			relation = strings.TrimPrefix(relation, fmt.Sprintf("%s|", _relatin_first))
+			iv := input.Get(_relatin_first)
 			s.HasOne(iv, w_key, relation)
 		} else {
 
@@ -267,6 +268,7 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 		iv := input
 		if len(relations) > 1 {
 			relation = strings.TrimPrefix(relation, fmt.Sprintf("%s|", _relatin_first))
+			iv := input.Get(_relatin_first)
 			s.HasMany(iv, w_key, relation)
 		} else {
 
