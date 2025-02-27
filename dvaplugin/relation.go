@@ -265,6 +265,10 @@ func (r *RelationLoader) load(db *gorm.DB) {
 		rv := r.Stash[rk]
 		rv_mt_slice_t := reflect.SliceOf(reflect.TypeOf(rv.childModel))
 		rv_silce := reflect.New(rv_mt_slice_t).Interface()
+
+		rvSliceType := reflect.SliceOf(reflect.TypeOf(rv.childModel))
+		rvSlicePtr := reflect.New(rvSliceType)
+
 		subcq := db
 		if rv.cdb != nil {
 			subcq = rv.cdb
@@ -272,18 +276,21 @@ func (r *RelationLoader) load(db *gorm.DB) {
 			subcq = subcq.Model(rv.childModel)
 		}
 		if len(keys) > 0 {
-			rows, err := subcq.Where(rv.sukey+" in ?", keys).
-				Rows()
-			if err != nil {
-				fmt.Println(err)
-			}
-			defer rows.Close()
-			for rows.Next() {
-				element := reflect.New(reflect.TypeOf(rv.childModel)).Interface()
-				db.ScanRows(rows, element)
-				reflect.ValueOf(rv_silce).Elem().Set(reflect.Append(reflect.ValueOf(rv_silce).Elem(),
-					reflect.ValueOf(element).Elem()))
-			}
+			subcq.Where(rv.sukey+" in ?", keys).Find(rvSlicePtr.Interface())
+			rv_silce = rvSlicePtr.Elem().Interface()
+
+			// rows, err := subcq.Where(rv.sukey+" in ?", keys).
+			// 	Rows()
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }
+			// defer rows.Close()
+			// for rows.Next() {
+			// 	element := reflect.New(reflect.TypeOf(rv.childModel)).Interface()
+			// 	db.ScanRows(rows, element)
+			// 	reflect.ValueOf(rv_silce).Elem().Set(reflect.Append(reflect.ValueOf(rv_silce).Elem(),
+			// 		reflect.ValueOf(element).Elem()))
+			// }
 		}
 
 		//填入结果

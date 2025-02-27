@@ -122,7 +122,7 @@ func ExampleDataer_GetKeys() {
 func ExampleDataer_HasOne() {
 
 	dataer := NewDataer().
-		SetMeta(test_json_parent).
+		SetMeta(test_json_parent). //测试json在本example所在文件中，可到github查看
 		SetCompareFunc(func(p, s gjson.Result) bool {
 			return p.Get("bid").Int() == s.Get("bid").Int()
 		}).
@@ -137,7 +137,7 @@ func ExampleDataer_HasOne() {
 func ExampleDataer_HasMany() {
 
 	dataer := NewDataer().
-		SetMeta(test_json_parent).
+		SetMeta(test_json_parent). //测试json在本example所在文件中，可到github查看
 		SetCompareFunc(func(p, s gjson.Result) bool {
 			return p.Get("bid").Int() == s.Get("bid").Int()
 		}).
