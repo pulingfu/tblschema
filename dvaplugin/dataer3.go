@@ -244,6 +244,7 @@ func (s *Dataer) HasMany(input gjson.Result, this_key, relation string) *Dataer 
 								_iv_key = fmt.Sprintf("%d", k)
 							}
 
+							iv = _iv
 							s.Meta, _ = sjson.Set(s.Meta, _iv_key, _iv.Value())
 
 							filter = append(filter, _sv.Value())
