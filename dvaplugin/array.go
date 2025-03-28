@@ -5,8 +5,8 @@ type Slicer[T any] struct {
 	Input []T
 }
 
-// FromSlice 从切片创建切片对象
-func FromSlice[T any](input []T) *Slicer[T] {
+// NewSlicer 从切片创建切片对象
+func NewSlicer[T any](input []T) *Slicer[T] {
 	return &Slicer[T]{
 		Input: input,
 	}

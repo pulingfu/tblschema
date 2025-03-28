@@ -32,7 +32,7 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 			// FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
 			// 	return f(iv, sv)
 			// })
-			filter := FromSlice(sub_g_v.Array()).
+			filter := NewSlicer(sub_g_v.Array()).
 				Find(func(v gjson.Result) bool {
 					return f(input_v, v)
 				})
@@ -48,7 +48,7 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 		// FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
 		// 	return f(input_v, sv)
 		// })
-		filter := FromSlice(sub_g_v.Array()).
+		filter := NewSlicer(sub_g_v.Array()).
 			Find(func(v gjson.Result) bool {
 				return f(input_v, v)
 			})
