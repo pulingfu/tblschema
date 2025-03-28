@@ -6,7 +6,7 @@ func Ptr[T any](v T) *T {
 }
 
 // 指针取值
-func Value[T any](v *T) T {
+func PtrValue[T any](v *T) T {
 	if v == nil {
 		return *new(T)
 	}
