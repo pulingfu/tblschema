@@ -66,3 +66,38 @@ func (s *Slicer[T]) Find(_f func(T) bool) []T {
 	}
 	return matches
 }
+
+// Map 方法
+func Map[T, R any](input []T, transform func(T) R) []R {
+	result := make([]R, len(input))
+	for i, v := range input {
+		result[i] = transform(v)
+	}
+	return result
+}
+
+// DuplicateMerge 合并重复元素
+// 使用dupf判断元素重复
+// 再使用transform合并重复的元素，生成新的元素
+// 新旧元素可以是不同类型
+func DuplicateMerge[T, R any](input []T,
+	dupf func(T) any,
+	transform func(T, R) R,
+) []R {
+	seen := make(map[any]R)
+	order := make([]any, 0, len(input))
+	for _, v := range input {
+		key := dupf(v)
+		if _, ok := seen[key]; !ok {
+			seen[key] = *new(R)
+			order = append(order, key)
+		}
+		seen[key] = transform(v, seen[key])
+	}
+
+	result := make([]R, 0, len(seen))
+	for _, v := range order {
+		result = append(result, seen[v])
+	}
+	return result
+}
