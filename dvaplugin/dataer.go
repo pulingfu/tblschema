@@ -27,11 +27,15 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 
 			// fmt.Println(sub_g_v.String())
 			// break
-			var remove []gjson.Result
-			var filter []gjson.Result
-			FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
-				return f(iv, sv)
-			})
+			// var remove []gjson.Result
+			// var filter []gjson.Result
+			// FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
+			// 	return f(iv, sv)
+			// })
+			filter := FromSlice(sub_g_v.Array()).
+				Find(func(v gjson.Result) bool {
+					return f(input_v, v)
+				})
 			// fmt.Println(len(filter))
 			result = append(result, VSetV(iv, JArrToInterface(filter), relation).Value())
 		}
@@ -39,11 +43,16 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 		var ret interface{} = result
 		return ret, nil
 	} else {
-		var remove []gjson.Result
-		var filter []gjson.Result
-		FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
-			return f(input_v, sv)
-		})
+		// var remove []gjson.Result
+		// var filter []gjson.Result
+		// FilterStructSlice(sub_g_v.Array(), &remove, &filter, func(sv gjson.Result) bool {
+		// 	return f(input_v, sv)
+		// })
+		filter := FromSlice(sub_g_v.Array()).
+			Find(func(v gjson.Result) bool {
+				return f(input_v, v)
+			})
+
 		return VSetV(input_v, JArrToInterface(filter), relation).Value(), nil
 	}
 
