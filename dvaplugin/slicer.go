@@ -29,6 +29,9 @@ func (s *Slicer[T]) Len() int {
 func (s *Slicer[T]) Data() []T {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if len(s.data) == 0 {
+		return make([]T, 0)
+	}
 	return s.data
 }
 
@@ -63,6 +66,20 @@ func (s *Slicer[T]) Contains(equal func(b T) bool) bool {
 		}
 	}
 	return false
+}
+
+// Count 根据条件返回符合条件的元素数量
+func (s *Slicer[T]) Count(_f func(T) bool) int {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	count := 0
+	for _, v := range s.data {
+		if _f(v) {
+			count++
+		}
+	}
+	return count
 }
 
 // Divide 分割数组

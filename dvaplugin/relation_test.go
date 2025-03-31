@@ -52,7 +52,7 @@ func (c TblClass) TableName() string {
 }
 
 // 加载多个表或者多个结构时间的嵌套关系
-func ExampleRelationLoader_LoadResult() {
+func ExampleNewRelationLoader() {
 
 	// 首先你有这些表
 	// 用户
