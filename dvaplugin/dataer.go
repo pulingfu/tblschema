@@ -35,7 +35,7 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 			filter := NewSlicer(sub_g_v.Array()).
 				Find(func(v gjson.Result) bool {
 					return f(input_v, v)
-				})
+				}).Data()
 			// fmt.Println(len(filter))
 			result = append(result, VSetV(iv, JArrToInterface(filter), relation).Value())
 		}
@@ -51,7 +51,7 @@ func HasMany(input interface{}, subGroup interface{}, relation string, f Compare
 		filter := NewSlicer(sub_g_v.Array()).
 			Find(func(v gjson.Result) bool {
 				return f(input_v, v)
-			})
+			}).Data()
 
 		return VSetV(input_v, JArrToInterface(filter), relation).Value(), nil
 	}

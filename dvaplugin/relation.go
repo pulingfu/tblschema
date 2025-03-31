@@ -180,6 +180,14 @@ func (r *RelationLoader) AddRelationWithOptions(opt *RelationOptions) *RelationL
 }
 
 // AddRelation 在关系网络上添加一个关系
+// relation_type 关系类型 HAS_ONE HAS_MANY BELONG_TO
+// relation 关系 父.子.子.子...
+// fakey 父级数据对应的key 上一级数据表里对应的关联字段
+// sukey 子级数据对应的key 当前级数据表里对应的关联字段
+// Child 子数据表的模型model
+// compareFunc 自定义比较函数 用于连接父数据和子数据的关键判断 非必填
+// cdb 自定义查询子数据的条件db 非必填
+// anonps 自定义父子数据修改，在连接数据的时候会调用  func(p, s gjson.Result) (gjson.Result, gjson.Result) 非必填
 func (r *RelationLoader) AddRelation(relation_type RELATION_TYPE, relation, fakey, sukey string,
 	Child interface{}, compareFunc CompareFun, cdb *gorm.DB, anonps ...interface{}) *RelationLoader {
 	var err error
