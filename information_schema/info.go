@@ -22,6 +22,7 @@ type SqlIndexesSerialize struct {
 	UnqIndexes      map[string]map[string][]string `json:"unique_indexes"`
 	Indexes         map[string]map[string][]string `json:"indexes"`
 	FulltextIndexes map[string]map[string][]string `json:"fulltext_indexes"`
+	PrimaryIndexes  map[string][]string            `json:"primary_indexes"`
 }
 
 type SqlColumnsSerialize map[string]map[string]string

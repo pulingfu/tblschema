@@ -231,6 +231,18 @@ func (ts *YamlToSqlHandler) doSchema() *YamlToSqlHandler {
 	for i, tbl := range ts.tables {
 		// sql := ""
 		tbJson := gjson.Get(tbl, "Table")
+
+		//primary field
+		var tbljsonv = tbJson.String()
+		tbJson.Get("id").ForEach(func(key, value gjson.Result) bool {
+			if tbJson.Get("fields." + key.String()).Exists() {
+				panic("主键字段和普通字段重名")
+			}
+			tbljsonv, _ = sjson.Set(tbljsonv, "fields."+key.String(), value.Value())
+			return true
+		})
+		tbJson = gjson.Parse(tbljsonv)
+
 		if tbJson.Exists() {
 			tname := tbJson.Get("table")
 			// fmt.Println(tname)
@@ -308,32 +320,36 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 	// var noIndex bool
 
 	columns := ""
-	primary_key := "PRIMARY KEY("
-	if tbl.Get("id").IsObject() {
-		tbl.Get("id").ForEach(func(key, value gjson.Result) bool {
-			if value.IsObject() {
-				columnType := value.Get("type").String()
-				// if columnType == "varchar" {
-				// 	columnType = "varchar(255)"
-				// }
-				columnType = getTypeYml2SqlMapping(columnType)
 
-				columns = fmt.Sprintf("%s\t%s %s %s NOT NULL,\n",
-					columns,
-					key.String(),
-					columnType,
-					value.Get("generator").String(),
-				)
-				primary_key = fmt.Sprintf("%s %s ,", primary_key, key.String())
-			} else {
-				noId = true
+	// primary_keys
+	var primary_key string
+	{
+		// 如果配置了主键就从主键里招，没有就从ID里
+		var primary_columns []string
+		if tbl.Get("primary_indexes").Exists() {
+			for _, col := range tbl.Get("primary_indexes.columns").Array() {
+				if col.String() == "" {
+					continue
+				}
+				primary_columns = append(primary_columns, col.String())
 			}
-			// fmt.Println("key=", key, "====value=", value)
-			return true
-		})
-		primary_key = fmt.Sprintf("%s)", primary_key[:len(primary_key)-1])
-	} else {
-		noId = true
+		} else {
+			if tbl.Get("id").IsObject() {
+				tbl.Get("id").ForEach(func(key, value gjson.Result) bool {
+					if key.String() != "" {
+						primary_columns = append(primary_columns, key.String())
+					} else {
+						noId = true
+					}
+					return true
+				})
+			}
+		}
+		if len(primary_columns) > 0 {
+			primary_key = fmt.Sprintf(`PRIMARY KEY(%s)`, strings.Join(primary_columns, ","))
+		} else {
+			noId = true
+		}
 	}
 
 	if tbl.Get("fields").IsObject() {
@@ -714,6 +730,7 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	// dropCloumns
 	dropColumnsSql := ""
 	sqlColumnsgj := gjson.Parse(string(sqlColumnsJ))
+	// fmt.Println(tbl.String())
 	sqlColumnsgj.ForEach(func(key, value gjson.Result) bool {
 		if tbl.Get("fields." + key.String()).Exists() {
 			var refresh bool
@@ -1034,10 +1051,12 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 	sqlIndexesSerialize.UnqIndexes = map[string]map[string][]string{}
 	sqlIndexesSerialize.Indexes = map[string]map[string][]string{}
 	sqlIndexesSerialize.FulltextIndexes = map[string]map[string][]string{}
+	sqlIndexesSerialize.PrimaryIndexes = map[string][]string{}
 
 	//计算sql
 	for _, sqlIndex := range sqlIndexes {
 		if strings.ToLower(sqlIndex.Key_name) == "primary" {
+			sqlIndexesSerialize.PrimaryIndexes["columns"] = append(sqlIndexesSerialize.PrimaryIndexes["columns"], sqlIndex.Column_name)
 			continue
 		}
 		if strings.ToLower(sqlIndex.IndexType) == "fulltext" {
@@ -1115,6 +1134,59 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 			return true
 		})
 	}
+
+	// 主键搜索，如果yml配置了primary_keys，则进行维护否则跳过
+	if tbl.Get("primary_indexes").Exists() {
+		primary_indexes := tbl.Get("primary_indexes.columns")
+		sql_primary_indexes := gjson.ParseBytes(sqlIndexesJ).Get("primary_indexes.columns")
+		if primary_indexes.String() != sql_primary_indexes.String() {
+
+			//仅删除
+			__f_drop := func() {
+				dropIndexesSql = fmt.Sprintf("%sALTER TABLE %s DROP PRIMARY KEY;\n",
+					dropIndexesSql,
+					tname,
+				)
+			}
+
+			//仅添加
+			__f_add := func() {
+				sqlcol := ""
+				for _, v := range primary_indexes.Array() {
+					sqlcol = fmt.Sprintf("%s%s,", sqlcol, v)
+				}
+				sqlcol = sqlcol[:len(sqlcol)-1]
+
+				sql = fmt.Sprintf("%sALTER TABLE %s ADD PRIMARY KEY (%s);\n",
+					sql,
+					tname,
+					sqlcol,
+				)
+			}
+
+			// 删除后添加
+			__f_update := func() {
+				sql = fmt.Sprintf("%sALTER TABLE %s DROP PRIMARY KEY;\n",
+					sql,
+					tname,
+				)
+				__f_add()
+			}
+
+			// 如果其中一个是空的
+			if primary_indexes.String() == "" || sql_primary_indexes.String() == "" {
+				// 如果yml配置了空，sql非空，则删除,否则添加
+				if primary_indexes.String() == "" && sql_primary_indexes.String() != "" {
+					__f_drop()
+				} else {
+					__f_add()
+				}
+			} else {
+				__f_update()
+			}
+		}
+	}
+
 	if gjson.Get(string(sqlIndexesJ), "fulltext_indexes").Exists() {
 		gjson.Get(string(sqlIndexesJ), "fulltext_indexes").ForEach(func(key, value gjson.Result) bool {
 			if tbl.Get("fulltext_indexes." + key.String()).Exists() {
@@ -1281,11 +1353,11 @@ func (ts *YamlToSqlHandler) verifyYmlFile() *YamlToSqlHandler {
 	for k, table := range ts.tables {
 		tbJson := gjson.Get(table, "Table")
 		// fieldsMap := map[string]string{}
-		if !tbJson.Get("id").Exists() {
-			fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
-			fmt.Printf("\x1b[%dm 缺少主键id \x1b[0m\n", 31)
-			panic("配置文件不正确")
-		}
+		// if !tbJson.Get("id").Exists() {
+		// 	fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
+		// 	fmt.Printf("\x1b[%dm 缺少主键id \x1b[0m\n", 31)
+		// 	panic("配置文件不正确")
+		// }
 		// if !tbJson.Get("id.id").Exists() {
 		// 	fmt.Printf("\x1b[%dm 配置文件不正确:'%s' \x1b[0m\n", 31, ts.yamlFileFullPaths[k])
 		// 	fmt.Printf("\x1b[%dm 缺少主键id \x1b[0m\n", 31)
