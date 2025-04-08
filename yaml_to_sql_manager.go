@@ -313,9 +313,10 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 		tbl.Get("id").ForEach(func(key, value gjson.Result) bool {
 			if value.IsObject() {
 				columnType := value.Get("type").String()
-				if columnType == "varchar" {
-					columnType = "varchar(255)"
-				}
+				// if columnType == "varchar" {
+				// 	columnType = "varchar(255)"
+				// }
+				columnType = getTypeYml2SqlMapping(columnType)
 
 				columns = fmt.Sprintf("%s\t%s %s %s NOT NULL,\n",
 					columns,
@@ -343,9 +344,10 @@ func (ts *YamlToSqlHandler) getCreateTableSql(tbl gjson.Result) string {
 				generator := value.Get("generator").String()
 				comment := value.Get("comment")
 				columnType := value.Get("type").String()
-				if columnType == "varchar" {
-					columnType = "varchar(255)"
-				}
+				// if columnType == "varchar" {
+				// 	columnType = "varchar(255)"
+				// }
+				columnType = getTypeYml2SqlMapping(columnType)
 				if value.Get("nullable").Bool() {
 					//不能有默认值的或者不写默认值
 					if !value.Get("default").Exists() || isNoDefaultType(columnType) {
@@ -679,11 +681,13 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 		if sqlColumnsSerialize[sc.ColumnName] == nil {
 			sqlColumnsSerialize[sc.ColumnName] = map[string]string{}
 		}
-		if !strings.Contains(sc.ColumnType, "varchar") && strings.Contains(sc.ColumnType, "(") {
-			b := strings.Index(sc.ColumnType, "(")
-			e := strings.Index(sc.ColumnType, ")")
-			sc.ColumnType = sc.ColumnType[:b] + sc.ColumnType[e+1:]
-		}
+		// if !strings.Contains(sc.ColumnType, "varchar") && strings.Contains(sc.ColumnType, "(") {
+		// 	b := strings.Index(sc.ColumnType, "(")
+		// 	e := strings.Index(sc.ColumnType, ")")
+		// 	sc.ColumnType = sc.ColumnType[:b] + sc.ColumnType[e+1:]
+		// }
+		sc.ColumnType = getTypeYml2SqlMapping(sc.ColumnType)
+
 		sqlColumnsSerialize[sc.ColumnName]["type"] = sc.ColumnType
 
 		if strings.ToLower(sc.IsNullable) == "yes" {
@@ -718,9 +722,10 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 			if tbl.Get("fields." + key.String() + ".type").Exists() {
 				ymlt := tbl.Get("fields." + key.String() + ".type").String()
 				ymlt = strings.ReplaceAll(ymlt, "integer", "int")
-				if ymlt == "varchar" {
-					ymlt = "varchar(255)"
-				}
+				// if ymlt == "varchar" {
+				// 	ymlt = "varchar(255)"
+				// }
+				ymlt = getTypeYml2SqlMapping(ymlt)
 				sqlt := value.Get("type").String()
 				sqlt = strings.ReplaceAll(sqlt, "integer", "int")
 
@@ -820,9 +825,10 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 			}
 			if refresh {
 				ymlt := tbl.Get("fields." + key.String() + ".type").String()
-				if ymlt == "varchar" {
-					ymlt = "varchar(255)"
-				}
+				// if ymlt == "varchar" {
+				// 	ymlt = "varchar(255)"
+				// }
+				ymlt = getTypeYml2SqlMapping(ymlt)
 				if isNoDefaultType(ymlt) {
 					if tbl.Get("fields."+key.String()+".nullable").Exists() &&
 						tbl.Get("fields."+key.String()+".nullable").String() == "true" {
@@ -928,15 +934,17 @@ func (ts *YamlToSqlHandler) getGetChangeTableSql(tbl gjson.Result, sqlTbl inform
 
 		return true
 	})
+
 	//计算新增
 	tbl.Get("fields").ForEach(func(key, value gjson.Result) bool {
 
 		if !sqlColumnsgj.Get(key.String()).Exists() {
 
 			ymlt := value.Get("type").String()
-			if ymlt == "varchar" {
-				ymlt = "varchar(255)"
-			}
+			// if ymlt == "varchar" {
+			// 	ymlt = "varchar(255)"
+			// }
+			ymlt = getTypeYml2SqlMapping(ymlt)
 			if isNoDefaultType(ymlt) {
 				if value.Get("nullable").Exists() &&
 					value.Get("nullable").String() != "true" {
@@ -1388,4 +1396,41 @@ func (ts *YamlToSqlHandler) GetSql() []string {
 func (ts *YamlToSqlHandler) DoSql() *YamlToSqlHandler {
 	ts.doSqlSafe()
 	return ts
+}
+
+// 获取数据类型yml对应sql的映射
+func getTypeYml2SqlMapping(t string) string {
+	t = strings.ToLower(t)
+	value := t
+	switch t {
+	case "bigint":
+		value = "bigint(20)"
+	case "binary":
+		value = "binary(1)"
+	case "bit":
+		value = "bit(1)"
+	case "boolean", "bool":
+		value = "tinyint(1)"
+	case "char":
+		value = "char(1)"
+	case "decimal":
+		value = "decimal(10,0)"
+	case "int", "integer":
+		value = "int(11)"
+	case "mediumint":
+		value = "mediumint(9)"
+	case "smallint":
+		value = "smallint(6)"
+	case "tinyint":
+		value = "tinyint(4)"
+	case "varchar":
+		value = "varchar(255)"
+	case "year":
+		value = "year(4)"
+	case "integer unsigned", "int unsigned":
+		value = "int(10) unsigned"
+	}
+	// 剩下的是 INFORMATION_SCHEMA.COLUMNS 的column_type没有默认长度的字段，不需要映射
+
+	return value
 }
