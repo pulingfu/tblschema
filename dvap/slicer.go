@@ -1,4 +1,4 @@
-package dvaplugin
+package dvap
 
 import (
 	"sort"
@@ -252,6 +252,147 @@ func (s *Slicer[T]) Sort(_f func(a, b T) bool) *Slicer[T] {
 	sort.Slice(s.data, func(i, j int) bool {
 		return _f(s.data[i], s.data[j])
 	})
+	return s
+}
+
+// Reverse 反转
+func (s *Slicer[T]) Reverse() *Slicer[T] {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for i, j := 0, len(s.data)-1; i < j; i, j = i+1, j-1 {
+		s.data[i], s.data[j] = s.data[j], s.data[i]
+	}
+	return s
+}
+
+// Unique 去重
+// 根据 keyFun 对本地data和ats中的数据进行去重
+func (s *Slicer[T]) Unique(keyFun func(itm T) any, ats ...[]T) *Slicer[T] {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	newData := s.data
+	for _, at := range ats {
+		newData = append(newData, at...)
+	}
+
+	seen := make(map[any]struct{}, len(newData))
+	unqdata := make([]T, 0, len(newData))
+	for _, item := range newData {
+		key := keyFun(item)
+		if _, ok := seen[key]; !ok {
+			seen[key] = struct{}{}
+			unqdata = append(unqdata, item)
+		}
+	}
+	s.data = unqdata
+	return s
+}
+
+// Intersection 求所有集合中的交集
+// 使用 keyFun 将元素转换为可比较的 key，并求基准集合与所有 ats 集合的交集。
+// 只保留首次出现的满足条件的元素，结果赋值给 s.data。
+func (s *Slicer[T]) Intersection(keyFun func(itm T) any, ats ...[]T) *Slicer[T] {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// 对于每个 ats 切片，构建一个 key 集合 map
+	setList := make([]map[any]struct{}, len(ats))
+	for i, at := range ats {
+		set := make(map[any]struct{})
+		for _, item := range at {
+			// keyFun 的返回值必须是可比较的类型
+			key := keyFun(item)
+			set[key] = struct{}{}
+		}
+		setList[i] = set
+	}
+
+	// 对基准集合 s.data 筛选，只保留所有 ats 中都存在的元素
+	intersection := make([]T, 0, len(s.data))
+	// 用于确保最终结果中相同 key 只保留一份
+	seen := make(map[any]struct{}, len(s.data))
+	for _, item := range s.data {
+		key := keyFun(item)
+		// 如果已经添加过，则跳过
+		if _, exists := seen[key]; exists {
+			continue
+		}
+
+		// 检查所有的 ats 集合中，都包含此 key
+		foundInAll := true
+		for _, set := range setList {
+			if _, ok := set[key]; !ok {
+				foundInAll = false
+				break
+			}
+		}
+
+		if foundInAll {
+			intersection = append(intersection, item)
+			seen[key] = struct{}{}
+		}
+	}
+
+	s.data = intersection
+	return s
+}
+
+// SymmetricDifference 对称差集：
+// 保留只出现在 s.data 或 at 其中一个集合中的元素。
+// keyFun 用于生成每个元素的唯一标识，需要返回可比较的类型。
+func (s *Slicer[T]) SymmetricDifference(keyFun func(itm T) any, at []T) *Slicer[T] {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// 构建 s.data 的键集合
+	aSet := make(map[any]T, len(s.data))
+	for _, item := range s.data {
+		key := keyFun(item)
+		aSet[key] = item
+	}
+
+	// 构建 at 切片的键集合
+	bSet := make(map[any]T, len(at))
+	for _, item := range at {
+		key := keyFun(item)
+		bSet[key] = item
+	}
+
+	result := make([]T, 0, len(s.data)+len(at))
+	for key, item := range aSet {
+		if _, exists := bSet[key]; !exists {
+			result = append(result, item)
+		}
+	}
+
+	for key, item := range bSet {
+		if _, exists := aSet[key]; !exists {
+			result = append(result, item)
+		}
+	}
+	s.data = result
+	return s
+}
+
+// Difference 返回本地集合 s.data 中不在 at 中的元素。
+// 注意：这里要求 keyFun 返回的值必须是可比较的类型
+func (s *Slicer[T]) Difference(keyFun func(itm T) any, at []T) *Slicer[T] {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	atMap := make(map[any]struct{}, len(at))
+	for _, item := range at {
+		key := keyFun(item)
+		atMap[key] = struct{}{}
+	}
+	result := make([]T, 0, len(s.data))
+	for _, item := range s.data {
+		key := keyFun(item)
+		if _, exists := atMap[key]; !exists {
+			result = append(result, item)
+		}
+	}
+	s.data = result
 	return s
 }
 

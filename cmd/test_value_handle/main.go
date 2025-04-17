@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/king-kkong/dataschema/dvaplugin"
+	"github.com/king-kkong/dataschema/dvap"
 )
 
 type AA struct {
@@ -24,7 +24,7 @@ func main() {
 		},
 	}
 
-	if ok, err := dvaplugin.HasValueInSlice(as, 1,
+	if ok, err := dvap.HasValueInSlice(as, 1,
 		func(a AA, b string) bool { return a.Name == b }); ok {
 		fmt.Println("ok")
 	} else {

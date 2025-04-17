@@ -1,4 +1,4 @@
-package dvaplugin
+package dvap
 
 // 指针
 func Ptr[T any](v T) *T {

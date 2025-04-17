@@ -1,4 +1,4 @@
-package dvaplugin
+package dvap
 
 import (
 	"github.com/tidwall/gjson"
