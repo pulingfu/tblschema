@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pulingfu/tblschema/cmd/test_alltabl_to_model/tbl_my_user"
+	"github.com/king-kkong/dataschema/cmd/test_alltabl_to_model/tbl_my_user"
 	"github.com/tidwall/gjson"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

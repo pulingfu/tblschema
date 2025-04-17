@@ -1,9 +1,9 @@
 package main
 
-import "github.com/pulingfu/tblschema"
+import tblschema "github.com/king-kkong/dataschema"
 
-//调用一键生成表结构API自动生成表结构
-//输入命令go run main.go
+// 调用一键生成表结构API自动生成表结构
+// 输入命令go run main.go
 func main() {
 	th := tblschema.NewTblToStructHandler()
 	//简易

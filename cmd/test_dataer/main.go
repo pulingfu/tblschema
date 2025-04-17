@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/pulingfu/tblschema/cmd/test_dataer/model"
-	"github.com/pulingfu/tblschema/dvaplugin"
+	"github.com/king-kkong/dataschema/cmd/test_dataer/model"
+	"github.com/king-kkong/dataschema/dvaplugin"
 	"github.com/tidwall/gjson"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

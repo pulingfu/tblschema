@@ -13,7 +13,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/pulingfu/tblschema/information_schema"
+	"github.com/king-kkong/dataschema/information_schema"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )

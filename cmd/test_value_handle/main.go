@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/pulingfu/tblschema/dvaplugin"
+	"github.com/king-kkong/dataschema/dvaplugin"
 )
 
 type AA struct {

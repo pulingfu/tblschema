@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/pulingfu/tblschema"
+	tblschema "github.com/king-kkong/dataschema"
 )
 
-//自定义生成想要的表结构
+// 自定义生成想要的表结构
 func main() {
 	th := tblschema.NewTblToStructHandler().
 		SetDsn("root:tiger@(127.0.0.1:3306)/pulingfu?charset=utf8mb4&parseTime=True&loc=Local").

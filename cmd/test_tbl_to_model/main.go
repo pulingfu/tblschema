@@ -1,11 +1,11 @@
-//测试将mysql单表生成 go struct model
+// 测试将mysql单表生成 go struct model
 package main
 
 import (
-	"github.com/pulingfu/tblschema"
+	tblschema "github.com/king-kkong/dataschema"
 )
 
-////输入命令go run main.go
+// //输入命令go run main.go
 func main() {
 	//简单用法
 	simple := tblschema.NewTblToStructHandler()

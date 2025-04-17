@@ -1,4 +1,4 @@
-module github.com/pulingfu/tblschema
+module github.com/king-kkong/dataschema
 
 go 1.21
 
