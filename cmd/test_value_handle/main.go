@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/king-kkong/dataschema/dvap"
+	"github.com/k-kkong/dataschema/dvap"
 )
 
 type AA struct {

@@ -1,6 +1,6 @@
 package main
 
-import tblschema "github.com/king-kkong/dataschema"
+import tblschema "github.com/k-kkong/dataschema"
 
 // 调用一键生成表结构API自动生成表结构
 // 输入命令go run main.go

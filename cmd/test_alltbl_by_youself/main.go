@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	tblschema "github.com/king-kkong/dataschema"
+	tblschema "github.com/k-kkong/dataschema"
 )
 
 // 自定义生成想要的表结构

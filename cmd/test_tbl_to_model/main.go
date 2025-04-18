@@ -2,7 +2,7 @@
 package main
 
 import (
-	tblschema "github.com/king-kkong/dataschema"
+	tblschema "github.com/k-kkong/dataschema"
 )
 
 // //输入命令go run main.go

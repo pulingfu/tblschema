@@ -1,7 +1,7 @@
 package main
 
 import (
-	tblschema "github.com/king-kkong/dataschema"
+	tblschema "github.com/k-kkong/dataschema"
 )
 
 func main() {

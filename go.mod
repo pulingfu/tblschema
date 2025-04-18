@@ -1,4 +1,4 @@
-module github.com/king-kkong/dataschema
+module github.com/k-kkong/dataschema
 
 go 1.21
 
