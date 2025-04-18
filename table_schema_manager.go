@@ -1,4 +1,4 @@
-package tblschema
+package dataschema
 
 import (
 	"fmt"

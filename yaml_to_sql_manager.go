@@ -1,4 +1,4 @@
-package tblschema
+package dataschema
 
 import (
 	"bufio"
@@ -39,7 +39,7 @@ func NewYamlToSqlHandler() *YamlToSqlHandler {
 	return &YamlToSqlHandler{
 		IsOutputBuildSchema:      false,
 		IsEncryOutputBuildSchema: false,
-		BuildSchemaDest:          "./tblschema.value",
+		BuildSchemaDest:          "./dataschema.value",
 	}
 }
 
